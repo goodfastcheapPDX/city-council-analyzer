@@ -2,6 +2,7 @@
 import { describe, beforeAll, afterAll, beforeEach, afterEach, it, expect, vi } from 'vitest';
 import { TranscriptStorage, TranscriptMetadata } from '../../../lib/storage/blob';
 import * as fastCheck from 'fast-check';
+import fc from 'fast-check';
 import { createClient } from '@supabase/supabase-js';
 import * as blobModule from '@vercel/blob';
 
@@ -50,7 +51,7 @@ describe('TranscriptStorage', () => {
 
   beforeAll(async () => {
     // Connect to the Supabase instance
-    supabase = createClient(supabaseUrl, supabaseKey);
+    if (!supabase) { supabase = createClient(supabaseUrl, supabaseKey); }
 
     // Initialize tables for testing
     const { error } = await supabase.rpc('initialize_transcript_tables');
@@ -80,16 +81,7 @@ describe('TranscriptStorage', () => {
       contentDisposition: 'inline',
       // Removed downloadUrl as it's not in the type
       cacheControl: 'public, max-age=31536000',
-      meta: {
-        sourceId: 'test-123',
-        title: 'Test Transcript',
-        date: new Date().toISOString(),
-        speakers: JSON.stringify(['Speaker A', 'Speaker B']),
-        version: '1',
-        format: 'json',
-        processingStatus: 'pending',
-        uploadedAt: new Date().toISOString(),
-      },
+
     });
 
     // Setup fetch mock
