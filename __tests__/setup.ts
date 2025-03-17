@@ -4,6 +4,7 @@
 
 // Set up DOM environment for components
 import '@testing-library/jest-dom';
+import { vi } from 'vitest';
 
 // Mock environment variables
 process.env.ENABLE_PROCESSING = 'true';

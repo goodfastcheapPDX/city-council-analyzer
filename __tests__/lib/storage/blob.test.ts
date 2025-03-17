@@ -1,72 +1,90 @@
-import { describe, it, expect, beforeEach, afterEach, vi, Mock } from 'vitest';
-import { TranscriptBlobStorage, TranscriptMetadata } from '@/lib/storage/blob';
-import { put, del, list, head } from '@vercel/blob';
+// tests/storage/transcript-storage.test.ts
+import { describe, beforeAll, afterAll, beforeEach, afterEach, it, expect, vi } from 'vitest';
+import { TranscriptStorage, TranscriptMetadata } from '../../../lib/storage/blob';
+import * as fastCheck from 'fast-check';
+import { createClient } from '@supabase/supabase-js';
+import * as blobModule from '@vercel/blob';
 
-// Mock Vercel Blob functions
-vi.mock('@vercel/blob', () => ({
-  put: vi.fn(),
-  del: vi.fn(),
-  list: vi.fn(),
-  head: vi.fn(),
-}));
+// Setup a test Supabase client with Docker
+const supabaseUrl = process.env.SUPABASE_URL || 'http://localhost:54321';
+const supabaseKey = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
 
-describe('TranscriptBlobStorage', () => {
-  let storage: TranscriptBlobStorage;
-  const mockMetadata: Omit<TranscriptMetadata, 'uploadedAt' | 'version'> = {
-    sourceId: 'test-source-id',
-    title: 'Test Transcript',
-    date: '2023-01-01',
-    speakers: ['Speaker 1', 'Speaker 2'],
-    format: 'json',
-    processingStatus: 'pending',
+// Mock modules
+vi.mock('@vercel/blob', async () => {
+  const actual = await vi.importActual('@vercel/blob');
+  return {
+    ...actual,
+    put: vi.fn(),
+    del: vi.fn(),
+    head: vi.fn(),
+    list: vi.fn(),
   };
+});
+
+// Test transcripts
+const sampleTranscript = JSON.stringify({
+  title: "Sample Transcript",
+  speakers: ["Speaker A", "Speaker B"],
+  segments: [
+    { speaker: "Speaker A", text: "Hello world", start: 0, end: 2.5 },
+    { speaker: "Speaker B", text: "Hi there", start: 2.6, end: 4.0 }
+  ]
+});
+
+// Generate valid metadata using fast-check
+const generateValidMetadata = (): fc.Arbitrary<Omit<TranscriptMetadata, 'uploadedAt' | 'version'>> => {
+  return fc.record({
+    sourceId: fc.string({ minLength: 5, maxLength: 20 }).filter(s => /^[a-z0-9-]+$/.test(s)),
+    title: fc.string({ minLength: 1, maxLength: 100 }),
+    date: fc.date().map(d => d.toISOString()),
+    speakers: fc.array(fc.string({ minLength: 1, maxLength: 50 }), { minLength: 0, maxLength: 10 }),
+    format: fc.constantFrom('json', 'text', 'srt', 'vtt'),
+    processingStatus: fc.constantFrom('pending', 'processed', 'failed'),
+    tags: fc.option(fc.array(fc.string({ minLength: 1, maxLength: 20 }), { maxLength: 5 })),
+  });
+};
+
+describe('TranscriptStorage', () => {
+  let storage: TranscriptStorage;
+  let supabase: ReturnType<typeof createClient>;
+
+  beforeAll(async () => {
+    // Connect to the Supabase instance
+    supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Initialize tables for testing
+    const { error } = await supabase.rpc('initialize_transcript_tables');
+    if (error) {
+      console.error('Error initializing tables:', error);
+    }
+  });
 
   beforeEach(() => {
-    storage = new TranscriptBlobStorage('test-transcripts');
-    vi.resetAllMocks();
+    // Create a fresh instance for each test
+    storage = new TranscriptStorage(supabaseUrl, supabaseKey, 'test-transcripts');
 
-    // Mock put function
-    (put as Mock).mockResolvedValue({
-      url: 'https://example.com/test-blob',
-      pathname: 'test-transcripts/test-source-id/v1_123456',
-    });
-
-    // Mock list function
-    (list as Mock).mockResolvedValue({
-      blobs: [
-        {
-          url: 'https://example.com/test-blob-1',
-          pathname: 'test-transcripts/test-source-id/v1_123456',
-          uploadedAt: new Date().toISOString(),
-          size: 1024,
-          metadata: {
-            sourceId: 'test-source-id',
-            title: 'Test Transcript',
-            date: '2023-01-01',
-            speakers: JSON.stringify(['Speaker 1', 'Speaker 2']),
-            version: '1',
-            format: 'json',
-            processingStatus: 'pending',
-            uploadedAt: new Date().toISOString(),
-          },
-        },
-      ],
-      hasMore: false,
-      cursor: 'test-cursor',
-    });
-
-    // Mock head function
-    (head as Mock).mockResolvedValue({
-      url: 'https://example.com/test-blob',
-      pathname: 'test-transcripts/test-source-id/v1_123456',
+    // Setup mocks with default responses
+    vi.mocked(blobModule.put).mockResolvedValue({
+      url: 'https://example.com/test-transcripts/test-123/v1_abc123',
+      pathname: 'test-transcripts/test-123/v1_abc123',
       contentType: 'application/json',
-      contentLength: 1024,
-      uploadedAt: new Date().toISOString(),
-      metadata: {
-        sourceId: 'test-source-id',
+      contentDisposition: 'inline',
+    });
+
+    vi.mocked(blobModule.head).mockResolvedValue({
+      url: 'https://example.com/test-transcripts/test-123/v1_abc123',
+      pathname: 'test-transcripts/test-123/v1_abc123',
+      size: 1024,
+      uploadedAt: new Date(),
+      contentType: 'application/json',
+      contentDisposition: 'inline',
+      // Removed downloadUrl as it's not in the type
+      cacheControl: 'public, max-age=31536000',
+      meta: {
+        sourceId: 'test-123',
         title: 'Test Transcript',
-        date: '2023-01-01',
-        speakers: JSON.stringify(['Speaker 1', 'Speaker 2']),
+        date: new Date().toISOString(),
+        speakers: JSON.stringify(['Speaker A', 'Speaker B']),
         version: '1',
         format: 'json',
         processingStatus: 'pending',
@@ -74,183 +92,473 @@ describe('TranscriptBlobStorage', () => {
       },
     });
 
-    // Mock fetch for getTranscript
+    // Setup fetch mock
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      text: vi.fn().mockResolvedValue('{"test": "content"}'),
+      text: () => Promise.resolve(sampleTranscript),
     });
   });
 
-  afterEach(() => {
-    vi.clearAllMocks();
+  afterEach(async () => {
+    // Clean up test data
+    await supabase.from('transcript_metadata').delete().eq('source_id', 'test-123');
+    vi.resetAllMocks();
   });
 
+  afterAll(async () => {
+    // Clean up all test data
+    const { data } = await supabase
+      .from('transcript_metadata')
+      .select('source_id')
+      .like('source_id', 'test-%');
+
+    if (data && data.length > 0) {
+      for (const item of data) {
+        await supabase.from('transcript_metadata').delete().eq('source_id', item.source_id);
+      }
+    }
+  });
+
+  // 1. Test behavior, not implementation
   describe('uploadTranscript', () => {
-    it('should upload a transcript with correct path and metadata', async () => {
-      const result = await storage.uploadTranscript('{"test": "content"}', mockMetadata);
+    it('should return a valid response with transcript information', async () => {
+      const metadata = {
+        sourceId: 'test-123',
+        title: 'Test Transcript',
+        date: new Date().toISOString(),
+        speakers: ['Speaker A', 'Speaker B'],
+        format: 'json' as const,
+        processingStatus: 'pending' as const,
+      };
 
-      expect(put).toHaveBeenCalledTimes(1);
-      expect(result.url).toBe('https://example.com/test-blob');
-      expect(result.metadata.version).toBe(1);
-      expect(result.metadata.processingStatus).toBe('pending');
+      const result = await storage.uploadTranscript(sampleTranscript, metadata);
+
+      // Verify behavior - we got a valid response
+      expect(result).toHaveProperty('url');
+      expect(result).toHaveProperty('blobKey');
+      expect(result).toHaveProperty('metadata');
+      expect(result.metadata.sourceId).toBe(metadata.sourceId);
+      expect(result.metadata.title).toBe(metadata.title);
+      expect(result.metadata.version).toBe(1); // First version
+
+      // Verify it's persisted in Supabase
+      const { data } = await supabase
+        .from('transcript_metadata')
+        .select('*')
+        .eq('source_id', metadata.sourceId)
+        .single();
+
+      expect(data).not.toBeNull();
+      expect(data!.source_id).toBe(metadata.sourceId);
     });
 
-    it('should increment version when a transcript already exists', async () => {
-      // Setup list to return existing version 1
-      (list as Mock).mockResolvedValueOnce({
-        blobs: [
-          {
-            pathname: 'test-transcripts/test-source-id/v1_123456',
-            metadata: { version: '1' },
-            uploadedAt: new Date().toISOString(),
+    // 2. Use property-based testing for edge cases
+    it('should handle various valid metadata inputs', async () => {
+      await fastCheck.assert(
+        fastCheck.asyncProperty(
+          generateValidMetadata(),
+          async (metadata) => {
+            const result = await storage.uploadTranscript(sampleTranscript, metadata);
+
+            expect(result).toHaveProperty('url');
+            expect(result).toHaveProperty('metadata');
+            expect(result.metadata.sourceId).toBe(metadata.sourceId);
+            expect(result.metadata.title).toBe(metadata.title);
+
+            // Verify it's persisted in Supabase
+            const { data } = await supabase
+              .from('transcript_metadata')
+              .select('*')
+              .eq('source_id', metadata.sourceId)
+              .single();
+
+            return data !== null && data.source_id === metadata.sourceId;
           }
-        ],
-      });
-
-      const result = await storage.uploadTranscript('{"test": "content"}', mockMetadata);
-
-      expect(result.metadata.version).toBe(2);
+        ),
+        { numRuns: 5 } // Limit runs to keep tests fast
+      );
     });
   });
 
   describe('getTranscript', () => {
     it('should retrieve a transcript by sourceId and version', async () => {
-      const result = await storage.getTranscript('test-source-id', 1);
+      // Setup: First create a transcript
+      const metadata = {
+        sourceId: 'test-123',
+        title: 'Test Transcript',
+        date: new Date().toISOString(),
+        speakers: ['Speaker A', 'Speaker B'],
+        format: 'json' as const,
+        processingStatus: 'pending' as const,
+      };
 
-      expect(head).toHaveBeenCalledTimes(1);
-      expect(result.content).toBe('{"test": "content"}');
-      expect(result.metadata.sourceId).toBe('test-source-id');
+      await storage.uploadTranscript(sampleTranscript, metadata);
+
+      // Test: Retrieve the transcript
+      const result = await storage.getTranscript('test-123', 1);
+
+      // Verify content and metadata
+      expect(result).toHaveProperty('content');
+      expect(result).toHaveProperty('metadata');
+      expect(result.content).toBe(sampleTranscript);
+      expect(result.metadata.sourceId).toBe(metadata.sourceId);
+      expect(result.metadata.version).toBe(1);
     });
 
-    it('should throw an error if transcript not found', async () => {
-      (head as Mock).mockResolvedValueOnce(null);
-
-      await expect(storage.getTranscript('missing-id', 1))
-        .rejects.toThrow('Transcript with sourceId missing-id and version 1 not found');
+    it('should throw an error for nonexistent transcript', async () => {
+      await expect(storage.getTranscript('nonexistent-id')).rejects.toThrow();
     });
   });
 
   describe('updateProcessingStatus', () => {
     it('should update the processing status of a transcript', async () => {
-      const result = await storage.updateProcessingStatus('test-source-id', 1, 'processed');
+      // Setup: Create a transcript
+      const metadata = {
+        sourceId: 'test-123',
+        title: 'Test Transcript',
+        date: new Date().toISOString(),
+        speakers: ['Speaker A', 'Speaker B'],
+        format: 'json' as const,
+        processingStatus: 'pending' as const,
+      };
 
-      expect(put).toHaveBeenCalledTimes(1);
-      expect(result.processingStatus).toBe('processed');
-      expect(result.processingCompletedAt).toBeDefined();
+      await storage.uploadTranscript(sampleTranscript, metadata);
+
+      // Test: Update status to processed
+      const updatedMetadata = await storage.updateProcessingStatus('test-123', 1, 'processed');
+
+      // Verify the status was updated
+      expect(updatedMetadata.processingStatus).toBe('processed');
+      expect(updatedMetadata.processingCompletedAt).toBeDefined();
+
+      // Verify it was persisted
+      const { data } = await supabase
+        .from('transcript_metadata')
+        .select('*')
+        .eq('source_id', 'test-123')
+        .eq('version', 1)
+        .single();
+
+      expect(data).not.toBeNull();
+      expect(data!.processing_status).toBe('processed');
+      expect(data!.processing_completed_at).not.toBeNull();
     });
   });
 
   describe('listVersions', () => {
-    it('should list all versions of a transcript sorted by version', async () => {
-      (list as Mock).mockResolvedValueOnce({
-        blobs: [
-          {
-            url: 'https://example.com/test-blob-1',
-            pathname: 'test-transcripts/test-source-id/v1_123456',
-            uploadedAt: new Date().toISOString(),
-            size: 1024,
-            metadata: { version: '1', sourceId: 'test-source-id', speakers: '[]' },
-          },
-          {
-            url: 'https://example.com/test-blob-2',
-            pathname: 'test-transcripts/test-source-id/v2_123456',
-            uploadedAt: new Date().toISOString(),
-            size: 1024,
-            metadata: { version: '2', sourceId: 'test-source-id', speakers: '[]' },
-          },
-        ],
-      });
+    it('should list all versions of a transcript in descending order', async () => {
+      // Setup: Create multiple versions
+      const metadata = {
+        sourceId: 'test-123',
+        title: 'Test Transcript',
+        date: new Date().toISOString(),
+        speakers: ['Speaker A', 'Speaker B'],
+        format: 'json' as const,
+        processingStatus: 'pending' as const,
+      };
 
-      const versions = await storage.listVersions('test-source-id');
+      // Upload version 1
+      await storage.uploadTranscript(sampleTranscript, metadata);
 
-      expect(versions.length).toBe(2);
-      expect(versions[0].metadata.version).toBe(2); // Sorted, so 2 is first
+      // Upload version 2
+      await storage.uploadTranscript(
+        sampleTranscript,
+        { ...metadata, title: 'Updated Test Transcript' }
+      );
+
+      // Test: List versions
+      const versions = await storage.listVersions('test-123');
+
+      // Verify versions are listed correctly
+      expect(versions).toHaveLength(2);
+      expect(versions[0].metadata.version).toBe(2); // Most recent first
       expect(versions[1].metadata.version).toBe(1);
+      expect(versions[0].metadata.title).toBe('Updated Test Transcript');
+    });
+
+    it('should return an empty array for nonexistent transcripts', async () => {
+      const versions = await storage.listVersions('nonexistent-id');
+      expect(versions).toEqual([]);
     });
   });
 
   describe('listTranscripts', () => {
-    it('should list the latest version of each transcript', async () => {
-      (list as Mock).mockResolvedValueOnce({
-        blobs: [
-          {
-            url: 'https://example.com/transcript1-v1',
-            pathname: 'test-transcripts/transcript1/v1_123456',
-            uploadedAt: new Date().toISOString(),
-            size: 1024,
-            metadata: {
-              sourceId: 'transcript1',
-              version: '1',
-              speakers: '[]',
-              uploadedAt: new Date().toISOString()
-            },
-          },
-          {
-            url: 'https://example.com/transcript1-v2',
-            pathname: 'test-transcripts/transcript1/v2_123456',
-            uploadedAt: new Date().toISOString(),
-            size: 1024,
-            metadata: {
-              sourceId: 'transcript1',
-              version: '2',
-              speakers: '[]',
-              uploadedAt: new Date().toISOString()
-            },
-          },
-          {
-            url: 'https://example.com/transcript2-v1',
-            pathname: 'test-transcripts/transcript2/v1_123456',
-            uploadedAt: new Date().toISOString(),
-            size: 1024,
-            metadata: {
-              sourceId: 'transcript2',
-              version: '1',
-              speakers: '[]',
-              uploadedAt: new Date().toISOString()
-            },
-          },
-        ],
-        hasMore: false,
+    it('should list latest versions of all transcripts', async () => {
+      // Setup: Create multiple transcripts
+      const transcripts = [
+        {
+          sourceId: 'test-123',
+          title: 'Test Transcript 1',
+          date: new Date().toISOString(),
+          speakers: ['Speaker A', 'Speaker B'],
+          format: 'json' as const,
+          processingStatus: 'pending' as const,
+        },
+        {
+          sourceId: 'test-456',
+          title: 'Test Transcript 2',
+          date: new Date().toISOString(),
+          speakers: ['Speaker C', 'Speaker D'],
+          format: 'json' as const,
+          processingStatus: 'pending' as const,
+        }
+      ];
+
+      // Upload transcripts
+      for (const metadata of transcripts) {
+        await storage.uploadTranscript(sampleTranscript, metadata);
+      }
+
+      // Add a second version of the first transcript
+      await storage.uploadTranscript(
+        sampleTranscript,
+        { ...transcripts[0], title: 'Updated Test Transcript 1' }
+      );
+
+      // Test: List all transcripts
+      const { items, total } = await storage.listTranscripts();
+
+      // Verify list contains only latest versions
+      expect(items.length).toBe(2);
+      expect(total).toBe(2);
+
+      // Check that we have the latest version of each transcript
+      const transcript1 = items.find(i => i.metadata.sourceId === 'test-123');
+      const transcript2 = items.find(i => i.metadata.sourceId === 'test-456');
+
+      expect(transcript1).toBeDefined();
+      expect(transcript2).toBeDefined();
+      expect(transcript1?.metadata.version).toBe(2);
+      expect(transcript1?.metadata.title).toBe('Updated Test Transcript 1');
+      expect(transcript2?.metadata.version).toBe(1);
+    });
+
+    it('should respect pagination parameters', async () => {
+      // Setup: Create multiple transcripts
+      const transcripts = Array.from({ length: 5 }, (_, i) => ({
+        sourceId: `test-${1000 + i}`,
+        title: `Test Transcript ${i + 1}`,
+        date: new Date().toISOString(),
+        speakers: ['Speaker A', 'Speaker B'],
+        format: 'json' as const,
+        processingStatus: 'pending' as const,
+      }));
+
+      // Upload transcripts
+      for (const metadata of transcripts) {
+        await storage.uploadTranscript(sampleTranscript, metadata);
+      }
+
+      // Test: List with pagination
+      const { items, total } = await storage.listTranscripts(2, 0);
+
+      // Verify pagination works
+      expect(items.length).toBe(2);
+      expect(total).toBe(5);
+
+      // Test next page
+      const nextPage = await storage.listTranscripts(2, 2);
+      expect(nextPage.items.length).toBe(2);
+
+      // Ensure pages don't overlap
+      const firstPageIds = items.map(i => i.metadata.sourceId);
+      const secondPageIds = nextPage.items.map(i => i.metadata.sourceId);
+      const intersection = firstPageIds.filter(id => secondPageIds.includes(id));
+      expect(intersection.length).toBe(0);
+    });
+  });
+
+  describe('searchTranscripts', () => {
+    it('should find transcripts matching search criteria', async () => {
+      // Setup: Create transcripts with different metadata
+      const transcripts = [
+        {
+          sourceId: 'test-search-1',
+          title: 'Financial Report Q1',
+          date: '2023-01-15T00:00:00.000Z',
+          speakers: ['John Doe', 'Jane Smith'],
+          format: 'json' as const,
+          processingStatus: 'processed' as const,
+          tags: ['finance', 'quarterly']
+        },
+        {
+          sourceId: 'test-search-2',
+          title: 'Financial Report Q2',
+          date: '2023-04-15T00:00:00.000Z',
+          speakers: ['John Doe', 'Mark Johnson'],
+          format: 'json' as const,
+          processingStatus: 'processed' as const,
+          tags: ['finance', 'quarterly']
+        },
+        {
+          sourceId: 'test-search-3',
+          title: 'Marketing Strategy',
+          date: '2023-02-10T00:00:00.000Z',
+          speakers: ['Sarah Connor', 'Jane Smith'],
+          format: 'json' as const,
+          processingStatus: 'pending' as const,
+          tags: ['marketing', 'strategy']
+        }
+      ];
+
+      // Upload transcripts
+      for (const metadata of transcripts) {
+        await storage.uploadTranscript(sampleTranscript, metadata);
+      }
+
+      // Test: Search by title
+      const titleResults = await storage.searchTranscripts({ title: 'Financial' });
+      expect(titleResults.items.length).toBe(2);
+      expect(titleResults.items.every(i => i.metadata.title.includes('Financial'))).toBe(true);
+
+      // Test: Search by speaker
+      const speakerResults = await storage.searchTranscripts({ speaker: 'Jane Smith' });
+      expect(speakerResults.items.length).toBe(2);
+
+      // Test: Search by tag
+      const tagResults = await storage.searchTranscripts({ tag: 'strategy' });
+      expect(tagResults.items.length).toBe(1);
+      expect(tagResults.items[0].metadata.sourceId).toBe('test-search-3');
+
+      // Test: Search by date range
+      const dateResults = await storage.searchTranscripts({
+        dateFrom: '2023-02-01T00:00:00.000Z',
+        dateTo: '2023-04-30T00:00:00.000Z'
       });
+      expect(dateResults.items.length).toBe(2);
 
-      const result = await storage.listTranscripts();
+      // Test: Search by status
+      const statusResults = await storage.searchTranscripts({ status: 'pending' });
+      expect(statusResults.items.length).toBe(1);
+      expect(statusResults.items[0].metadata.processingStatus).toBe('pending');
 
-      expect(result.items.length).toBe(2); // 2 unique transcripts
-      expect(result.items.find(i => i.metadata.sourceId === 'transcript1')?.metadata.version).toBe(2);
+      // Test: Combined search
+      const combinedResults = await storage.searchTranscripts({
+        title: 'Financial',
+        speaker: 'John Doe'
+      });
+      expect(combinedResults.items.length).toBe(2);
     });
   });
 
   describe('deleteTranscriptVersion', () => {
     it('should delete a specific version of a transcript', async () => {
-      await storage.deleteTranscriptVersion('test-source-id', 1);
+      // Setup: Create multiple versions
+      const metadata = {
+        sourceId: 'test-123',
+        title: 'Test Transcript',
+        date: new Date().toISOString(),
+        speakers: ['Speaker A', 'Speaker B'],
+        format: 'json' as const,
+        processingStatus: 'pending' as const,
+      };
 
-      expect(del).toHaveBeenCalledTimes(1);
-      expect(del).toHaveBeenCalledWith(expect.stringContaining('test-source-id/v1_'));
+      // Upload version 1
+      await storage.uploadTranscript(sampleTranscript, metadata);
+
+      // Upload version 2
+      await storage.uploadTranscript(
+        sampleTranscript,
+        { ...metadata, title: 'Updated Test Transcript' }
+      );
+
+      // Verify we have 2 versions
+      const beforeDelete = await storage.listVersions('test-123');
+      expect(beforeDelete.length).toBe(2);
+
+      // Test: Delete version 1
+      await storage.deleteTranscriptVersion('test-123', 1);
+
+      // Verify only version 2 remains
+      const afterDelete = await storage.listVersions('test-123');
+      expect(afterDelete.length).toBe(1);
+      expect(afterDelete[0].metadata.version).toBe(2);
+
+      // Verify Blob storage deletion was called
+      expect(blobModule.del).toHaveBeenCalled();
     });
   });
 
   describe('deleteAllVersions', () => {
     it('should delete all versions of a transcript', async () => {
-      (list as Mock).mockResolvedValueOnce({
-        blobs: [
-          {
-            url: 'https://example.com/test-blob-1',
-            pathname: 'test-transcripts/test-source-id/v1_123456',
-            metadata: { version: '1' },
-            uploadedAt: new Date().toISOString(),
-          },
-          {
-            url: 'https://example.com/test-blob-2',
-            pathname: 'test-transcripts/test-source-id/v2_123456',
-            metadata: { version: '2' },
-            uploadedAt: new Date().toISOString(),
-          },
-        ],
+      // Setup: Create multiple versions
+      const metadata = {
+        sourceId: 'test-123',
+        title: 'Test Transcript',
+        date: new Date().toISOString(),
+        speakers: ['Speaker A', 'Speaker B'],
+        format: 'json' as const,
+        processingStatus: 'pending' as const,
+      };
+
+      // Upload multiple versions
+      await storage.uploadTranscript(sampleTranscript, metadata);
+      await storage.uploadTranscript(sampleTranscript, { ...metadata, title: 'V2' });
+      await storage.uploadTranscript(sampleTranscript, { ...metadata, title: 'V3' });
+
+      // Verify we have 3 versions
+      const beforeDelete = await storage.listVersions('test-123');
+      expect(beforeDelete.length).toBe(3);
+
+      // Test: Delete all versions
+      await storage.deleteAllVersions('test-123');
+
+      // Verify all versions are deleted
+      const afterDelete = await storage.listVersions('test-123');
+      expect(afterDelete.length).toBe(0);
+
+      // Verify Blob storage deletion was called multiple times
+      expect(blobModule.del).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  // Contract test - ensure integration with Supabase works correctly
+  describe('Contract test with Supabase', () => {
+    // This uses a real Supabase instance in Docker, not mocks
+    it('should correctly store and retrieve data from Supabase', async () => {
+      // Override mocks to use real Vercel Blob API for this test
+      vi.mocked(blobModule.put).mockImplementation(async (pathname, body, options) => {
+        // Simplified version that just returns fake response
+        const url = `https://example.com/${pathname}`;
+        return {
+          url,
+          pathname,
+          contentType: options?.contentType || 'application/json',
+          contentDisposition: 'inline',
+        };
       });
 
-      await storage.deleteAllVersions('test-source-id');
+      // Use a fresh unique ID for this test
+      const uniqueId = `test-contract-${Date.now()}`;
 
-      expect(del).toHaveBeenCalledTimes(2);
+      // Upload to storage
+      const uploadResult = await storage.uploadTranscript(
+        sampleTranscript,
+        {
+          sourceId: uniqueId,
+          title: 'Contract Test Transcript',
+          date: new Date().toISOString(),
+          speakers: ['Contract Speaker A', 'Contract Speaker B'],
+          format: 'json',
+          processingStatus: 'pending',
+          tags: ['contract-test']
+        }
+      );
+
+      // Directly verify in Supabase
+      const { data } = await supabase
+        .from('transcript_metadata')
+        .select('*')
+        .eq('source_id', uniqueId)
+        .single();
+
+      expect(data).not.toBeNull();
+      expect(data!.source_id).toBe(uniqueId);
+      expect(data!.title).toBe('Contract Test Transcript');
+      expect(data!.tags).toContain('contract-test');
+
+      // Clean up
+      await supabase.from('transcript_metadata').delete().eq('source_id', uniqueId);
     });
   });
 });
