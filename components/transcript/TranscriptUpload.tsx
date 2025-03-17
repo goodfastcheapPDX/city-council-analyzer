@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { TranscriptMetadata } from '@/lib/storage/blob';
 import { Loader2, Upload, File, CheckCircle, AlertCircle } from 'lucide-react';
 
@@ -372,3 +372,5 @@ export function TranscriptUpload({ onUploadSuccess, onUploadError }: TranscriptU
                     )}
                 </Button>
             </CardFooter>
+        </Card>)
+}
