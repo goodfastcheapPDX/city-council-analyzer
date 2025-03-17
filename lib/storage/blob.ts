@@ -115,6 +115,19 @@ export class TranscriptStorage {
             addRandomSuffix: true
         });
 
+        // Get the size by checking the content
+        let contentSize = 0;
+        if (typeof content === 'string') {
+            contentSize = new TextEncoder().encode(content).length;
+        } else if (content instanceof ArrayBuffer) {
+            contentSize = content.byteLength;
+        } else if (content instanceof Blob) {
+            contentSize = content.size;
+        } else if (content instanceof File) {
+            contentSize = content.size;
+        }
+        // For ReadableStream and other types, we won't have size info initially
+
         // Store metadata in Supabase
         const { error } = await this.supabase
             .from('transcript_metadata')
@@ -131,7 +144,7 @@ export class TranscriptStorage {
                 uploaded_at: fullMetadata.uploadedAt,
                 processing_completed_at: fullMetadata.processingCompletedAt,
                 tags: fullMetadata.tags,
-                size: result.size
+                size: contentSize
             });
 
         if (error) {
@@ -289,7 +302,7 @@ export class TranscriptStorage {
                 tags: record.tags
             },
             uploadedAt: new Date(record.uploaded_at),
-            size: record.size
+            size: record.size || 0
         }));
     }
 
@@ -335,7 +348,7 @@ export class TranscriptStorage {
                     tags: record.tags
                 },
                 uploadedAt: new Date(record.uploaded_at),
-                size: record.size
+                size: record.size || 0
             })),
             total: count || 0
         };
@@ -418,7 +431,7 @@ export class TranscriptStorage {
                     tags: record.tags
                 },
                 uploadedAt: new Date(record.uploaded_at),
-                size: record.size
+                size: record.size || 0
             })),
             total: count || 0
         };
