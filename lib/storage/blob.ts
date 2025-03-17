@@ -3,13 +3,13 @@ import {
     put,
     del,
     list,
-    head,
-    PutOptions,
-    ListOptions,
-    HeadResponse
+    head
 } from '@vercel/blob';
 import { nanoid } from 'nanoid';
 
+type PutOptions = Parameters<typeof put>[2]
+type ListOptions = Parameters<typeof list>[0]
+type HeadResponse = ReturnType<typeof head>
 /**
  * Interface for transcript metadata stored alongside blobs
  */
@@ -67,7 +67,7 @@ export class TranscriptBlobStorage {
      * @returns Promise with upload response
      */
     async uploadTranscript(
-        content: string | Buffer,
+        content: Parameters<typeof put>[1],
         metadata: Omit<TranscriptMetadata, 'uploadedAt' | 'version'>
     ): Promise<TranscriptBlobResponse> {
         // Get the latest version if this sourceId already exists
@@ -88,7 +88,7 @@ export class TranscriptBlobStorage {
         // Set put options with metadata
         const options: PutOptions = {
             contentType: 'application/json',
-            meta: fullMetadata as Record<string, string>
+            meta: fullMetadata
         };
 
         // Upload to Vercel Blob
@@ -167,7 +167,7 @@ export class TranscriptBlobStorage {
         // Re-upload with updated metadata
         const options: PutOptions = {
             contentType: 'application/json',
-            meta: updatedMetadata as Record<string, string>
+            meta: updatedMetadata
         };
 
         await put(blobKey, content, options);
@@ -182,7 +182,7 @@ export class TranscriptBlobStorage {
      */
     async listVersions(sourceId: string): Promise<TranscriptBlobListItem[]> {
         const prefix = `${this.pathPrefix}/${sourceId}/`;
-        const options: ListOptions = { prefix };
+        const options:  = { prefix };
 
         const { blobs } = await list(options);
 
