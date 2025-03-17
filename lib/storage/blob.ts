@@ -3,15 +3,16 @@ import {
     put,
     del,
     list,
-    head
+    head,
+    type PutBlobResult,
+    type HeadBlobResult
 } from '@vercel/blob';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { nanoid } from 'nanoid';
+import { Readable } from 'stream';
 
-type PutOptions = Parameters<typeof put>[2]
-type ListOptions = Parameters<typeof list>[0]
-type HeadResponse = ReturnType<typeof head>
 /**
- * Interface for transcript metadata stored alongside blobs
+ * Interface for transcript metadata
  */
 export interface TranscriptMetadata {
     sourceId: string;
@@ -47,27 +48,48 @@ export interface TranscriptBlobListItem {
 }
 
 /**
- * Class handling Vercel Blob storage operations for transcripts
+ * Class handling Vercel Blob storage operations for transcripts with Supabase metadata storage
  */
-export class TranscriptBlobStorage {
+export class TranscriptStorage {
     private readonly pathPrefix: string;
+    private readonly supabase: SupabaseClient;
 
     /**
-     * Constructor for TranscriptBlobStorage
+     * Constructor for TranscriptStorage
+     * @param supabaseUrl Supabase URL
+     * @param supabaseKey Supabase API key
      * @param pathPrefix Optional prefix for all blob paths
      */
-    constructor(pathPrefix: string = 'transcripts') {
+    constructor(
+        supabaseUrl: string,
+        supabaseKey: string,
+        pathPrefix: string = 'transcripts'
+    ) {
         this.pathPrefix = pathPrefix;
+        this.supabase = createClient(supabaseUrl, supabaseKey);
     }
 
     /**
-     * Uploads a transcript to blob storage
-     * @param content Transcript content as string
+     * Initialize Supabase tables required for transcript storage
+     */
+    async initializeDatabase(): Promise<void> {
+        // This would typically be done through migrations
+        // But we include the code here for completeness
+        const { error } = await this.supabase.rpc('initialize_transcript_tables');
+
+        if (error) {
+            throw new Error(`Failed to initialize transcript tables: ${error.message}`);
+        }
+    }
+
+    /**
+     * Uploads a transcript to blob storage and stores metadata in Supabase
+     * @param content Transcript content
      * @param metadata Transcript metadata
      * @returns Promise with upload response
      */
     async uploadTranscript(
-        content: Parameters<typeof put>[1],
+        content: string | ArrayBuffer | ReadableStream<any> | Readable | Blob | FormData | File,
         metadata: Omit<TranscriptMetadata, 'uploadedAt' | 'version'>
     ): Promise<TranscriptBlobResponse> {
         // Get the latest version if this sourceId already exists
@@ -85,18 +107,42 @@ export class TranscriptBlobStorage {
             processingStatus: 'pending'
         };
 
-        // Set put options with metadata
-        const options: PutOptions = {
-            contentType: 'application/json',
-            meta: fullMetadata
-        };
-
         // Upload to Vercel Blob
-        const { url } = await put(blobKey, content, options);
+        const result = await put(blobKey, content, {
+            contentType: 'application/json',
+            access: 'public',
+            cacheControlMaxAge: 3600, // Cache for an hour
+            addRandomSuffix: true
+        });
+
+        // Store metadata in Supabase
+        const { error } = await this.supabase
+            .from('transcript_metadata')
+            .insert({
+                blob_key: result.pathname,
+                url: result.url,
+                source_id: fullMetadata.sourceId,
+                title: fullMetadata.title,
+                date: fullMetadata.date,
+                speakers: fullMetadata.speakers,
+                version: fullMetadata.version,
+                format: fullMetadata.format,
+                processing_status: fullMetadata.processingStatus,
+                uploaded_at: fullMetadata.uploadedAt,
+                processing_completed_at: fullMetadata.processingCompletedAt,
+                tags: fullMetadata.tags,
+                size: result.size
+            });
+
+        if (error) {
+            // If metadata storage fails, delete the blob to maintain consistency
+            await del(result.pathname);
+            throw new Error(`Failed to store transcript metadata: ${error.message}`);
+        }
 
         return {
-            url,
-            blobKey,
+            url: result.url,
+            blobKey: result.pathname,
             metadata: fullMetadata
         };
     }
@@ -105,20 +151,35 @@ export class TranscriptBlobStorage {
      * Retrieves a transcript from blob storage
      * @param sourceId Source identifier for the transcript
      * @param version Optional version number (retrieves latest if not specified)
-     * @returns Promise with transcript content
+     * @returns Promise with transcript content and metadata
      */
     async getTranscript(sourceId: string, version?: number): Promise<{ content: string; metadata: TranscriptMetadata }> {
-        const actualVersion = version || await this.getLatestVersion(sourceId);
+        // Get metadata from Supabase
+        let query = this.supabase
+            .from('transcript_metadata')
+            .select('*')
+            .eq('source_id', sourceId);
 
-        if (actualVersion <= 0) {
-            throw new Error(`Transcript with sourceId ${sourceId} not found`);
+        if (version) {
+            query = query.eq('version', version);
+        } else {
+            query = query.order('version', { ascending: false }).limit(1);
         }
 
-        const blobKey = this.generateBlobKey(sourceId, actualVersion);
+        const { data, error } = await query;
+
+        if (error || !data || data.length === 0) {
+            throw new Error(`Transcript with sourceId ${sourceId}${version ? ` and version ${version}` : ''} not found`);
+        }
+
+        const metadataRecord = data[0];
+        const blobKey = metadataRecord.blob_key;
+
+        // Get content from Vercel Blob
         const headResponse = await head(blobKey);
 
         if (!headResponse) {
-            throw new Error(`Transcript with sourceId ${sourceId} and version ${actualVersion} not found`);
+            throw new Error(`Transcript blob not found: ${blobKey}`);
         }
 
         const response = await fetch(headResponse.url);
@@ -128,7 +189,20 @@ export class TranscriptBlobStorage {
         }
 
         const content = await response.text();
-        const metadata = this.extractMetadata(headResponse);
+
+        // Convert Supabase record to TranscriptMetadata
+        const metadata: TranscriptMetadata = {
+            sourceId: metadataRecord.source_id,
+            title: metadataRecord.title,
+            date: metadataRecord.date,
+            speakers: metadataRecord.speakers,
+            version: metadataRecord.version,
+            format: metadataRecord.format,
+            processingStatus: metadataRecord.processing_status,
+            uploadedAt: metadataRecord.uploaded_at,
+            processingCompletedAt: metadataRecord.processing_completed_at,
+            tags: metadataRecord.tags
+        };
 
         return { content, metadata };
     }
@@ -145,34 +219,38 @@ export class TranscriptBlobStorage {
         version: number,
         status: TranscriptMetadata['processingStatus']
     ): Promise<TranscriptMetadata> {
-        const blobKey = this.generateBlobKey(sourceId, version);
-        const headResponse = await head(blobKey);
+        const updates = {
+            processing_status: status,
+            ...(status === 'processed' && {
+                processing_completed_at: new Date().toISOString()
+            })
+        };
 
-        if (!headResponse) {
-            throw new Error(`Transcript with sourceId ${sourceId} and version ${version} not found`);
+        const { data, error } = await this.supabase
+            .from('transcript_metadata')
+            .update(updates)
+            .eq('source_id', sourceId)
+            .eq('version', version)
+            .select()
+            .single();
+
+        if (error || !data) {
+            throw new Error(`Failed to update transcript status: ${error?.message || 'Record not found'}`);
         }
 
-        // Extract and update metadata
-        const metadata = this.extractMetadata(headResponse);
-        const updatedMetadata: TranscriptMetadata = {
-            ...metadata,
-            processingStatus: status,
-            ...(status === 'processed' && { processingCompletedAt: new Date().toISOString() })
+        // Convert Supabase record to TranscriptMetadata
+        return {
+            sourceId: data.source_id,
+            title: data.title,
+            date: data.date,
+            speakers: data.speakers,
+            version: data.version,
+            format: data.format,
+            processingStatus: data.processing_status,
+            uploadedAt: data.uploaded_at,
+            processingCompletedAt: data.processing_completed_at,
+            tags: data.tags
         };
-
-        // Get current content
-        const response = await fetch(headResponse.url);
-        const content = await response.text();
-
-        // Re-upload with updated metadata
-        const options: PutOptions = {
-            contentType: 'application/json',
-            meta: updatedMetadata
-        };
-
-        await put(blobKey, content, options);
-
-        return updatedMetadata;
     }
 
     /**
@@ -181,65 +259,168 @@ export class TranscriptBlobStorage {
      * @returns Promise with array of transcript versions
      */
     async listVersions(sourceId: string): Promise<TranscriptBlobListItem[]> {
-        const prefix = `${this.pathPrefix}/${sourceId}/`;
-        const options:  = { prefix };
+        const { data, error } = await this.supabase
+            .from('transcript_metadata')
+            .select('*')
+            .eq('source_id', sourceId)
+            .order('version', { ascending: false });
 
-        const { blobs } = await list(options);
+        if (error) {
+            throw new Error(`Failed to list transcript versions: ${error.message}`);
+        }
 
-        return blobs.map(blob => ({
-            url: blob.url,
-            blobKey: blob.pathname,
-            metadata: this.parseBlobMetadata(blob.metadata as unknown as Record<string, string>),
-            uploadedAt: new Date(blob.uploadedAt),
-            size: blob.size
-        })).sort((a, b) => b.metadata.version - a.metadata.version);
+        if (!data || data.length === 0) {
+            return [];
+        }
+
+        return data.map(record => ({
+            url: record.url,
+            blobKey: record.blob_key,
+            metadata: {
+                sourceId: record.source_id,
+                title: record.title,
+                date: record.date,
+                speakers: record.speakers,
+                version: record.version,
+                format: record.format,
+                processingStatus: record.processing_status,
+                uploadedAt: record.uploaded_at,
+                processingCompletedAt: record.processing_completed_at,
+                tags: record.tags
+            },
+            uploadedAt: new Date(record.uploaded_at),
+            size: record.size
+        }));
     }
 
     /**
      * Lists all transcripts
      * @param limit Optional maximum number of transcripts to return
-     * @param cursor Optional pagination cursor
+     * @param offset Optional offset for pagination
      * @returns Promise with array of transcripts (latest version of each)
      */
-    async listTranscripts(limit?: number, cursor?: string): Promise<{
+    async listTranscripts(limit?: number, offset?: number): Promise<{
         items: TranscriptBlobListItem[];
-        hasMore: boolean;
-        nextCursor?: string
+        total: number;
     }> {
-        const options: ListOptions = {
-            prefix: `${this.pathPrefix}/`,
-            limit,
-            cursor
-        };
+        // This query gets the latest version of each transcript
+        const { data, error, count } = await this.supabase
+            .from('transcript_metadata_latest_view')
+            .select('*', { count: 'exact' })
+            .order('uploaded_at', { ascending: false })
+            .range(offset || 0, (offset || 0) + (limit || 9))
 
-        const { blobs, hasMore, cursor: nextCursor } = await list(options);
+        if (error) {
+            throw new Error(`Failed to list transcripts: ${error.message}`);
+        }
 
-        // Group by sourceId and keep only the latest version
-        const latestVersions = new Map<string, TranscriptBlobListItem>();
-
-        for (const blob of blobs) {
-            const sourceId = blob.pathname.split('/')[1];
-            const metadata = this.parseBlobMetadata(blob.metadata as unknown as Record<string, string>);
-
-            const item: TranscriptBlobListItem = {
-                url: blob.url,
-                blobKey: blob.pathname,
-                metadata,
-                uploadedAt: new Date(blob.uploadedAt),
-                size: blob.size
-            };
-
-            if (!latestVersions.has(sourceId) ||
-                metadata.version > latestVersions.get(sourceId)!.metadata.version) {
-                latestVersions.set(sourceId, item);
-            }
+        if (!data) {
+            return { items: [], total: 0 };
         }
 
         return {
-            items: Array.from(latestVersions.values())
-                .sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime()),
-            hasMore,
-            nextCursor: hasMore ? nextCursor : undefined
+            items: data.map(record => ({
+                url: record.url,
+                blobKey: record.blob_key,
+                metadata: {
+                    sourceId: record.source_id,
+                    title: record.title,
+                    date: record.date,
+                    speakers: record.speakers,
+                    version: record.version,
+                    format: record.format,
+                    processingStatus: record.processing_status,
+                    uploadedAt: record.uploaded_at,
+                    processingCompletedAt: record.processing_completed_at,
+                    tags: record.tags
+                },
+                uploadedAt: new Date(record.uploaded_at),
+                size: record.size
+            })),
+            total: count || 0
+        };
+    }
+
+    /**
+     * Searches transcripts by metadata
+     * @param query Search parameters
+     * @returns Promise with matching transcripts
+     */
+    async searchTranscripts(query: {
+        title?: string;
+        speaker?: string;
+        tag?: string;
+        dateFrom?: string;
+        dateTo?: string;
+        status?: TranscriptMetadata['processingStatus'];
+        limit?: number;
+        offset?: number;
+    }): Promise<{
+        items: TranscriptBlobListItem[];
+        total: number;
+    }> {
+        let supabaseQuery = this.supabase
+            .from('transcript_metadata_latest_view')
+            .select('*', { count: 'exact' });
+
+        if (query.title) {
+            supabaseQuery = supabaseQuery.ilike('title', `%${query.title}%`);
+        }
+
+        if (query.speaker) {
+            supabaseQuery = supabaseQuery.contains('speakers', [query.speaker]);
+        }
+
+        if (query.tag) {
+            supabaseQuery = supabaseQuery.contains('tags', [query.tag]);
+        }
+
+        if (query.dateFrom) {
+            supabaseQuery = supabaseQuery.gte('date', query.dateFrom);
+        }
+
+        if (query.dateTo) {
+            supabaseQuery = supabaseQuery.lte('date', query.dateTo);
+        }
+
+        if (query.status) {
+            supabaseQuery = supabaseQuery.eq('processing_status', query.status);
+        }
+
+        supabaseQuery = supabaseQuery
+            .order('uploaded_at', { ascending: false })
+            .range(query.offset || 0, (query.offset || 0) + (query.limit || 9));
+
+        const { data, error, count } = await supabaseQuery;
+
+        if (error) {
+            throw new Error(`Failed to search transcripts: ${error.message}`);
+        }
+
+        if (!data) {
+            return { items: [], total: 0 };
+        }
+
+        return {
+            items: data.map(record => ({
+                url: record.url,
+                blobKey: record.blob_key,
+                metadata: {
+                    sourceId: record.source_id,
+                    title: record.title,
+                    date: record.date,
+                    speakers: record.speakers,
+                    version: record.version,
+                    format: record.format,
+                    processingStatus: record.processing_status,
+                    uploadedAt: record.uploaded_at,
+                    processingCompletedAt: record.processing_completed_at,
+                    tags: record.tags
+                },
+                uploadedAt: new Date(record.uploaded_at),
+                size: record.size
+            })),
+            total: count || 0
         };
     }
 
@@ -250,8 +431,33 @@ export class TranscriptBlobStorage {
      * @returns Promise indicating deletion success
      */
     async deleteTranscriptVersion(sourceId: string, version: number): Promise<void> {
-        const blobKey = this.generateBlobKey(sourceId, version);
+        // Get the blob key from Supabase
+        const { data, error } = await this.supabase
+            .from('transcript_metadata')
+            .select('blob_key')
+            .eq('source_id', sourceId)
+            .eq('version', version)
+            .single();
+
+        if (error || !data) {
+            throw new Error(`Transcript version not found: ${error?.message || 'Record not found'}`);
+        }
+
+        const blobKey = data.blob_key;
+
+        // Delete from Vercel Blob
         await del(blobKey);
+
+        // Delete from Supabase
+        const { error: deleteError } = await this.supabase
+            .from('transcript_metadata')
+            .delete()
+            .eq('source_id', sourceId)
+            .eq('version', version);
+
+        if (deleteError) {
+            throw new Error(`Failed to delete transcript metadata: ${deleteError.message}`);
+        }
     }
 
     /**
@@ -260,12 +466,34 @@ export class TranscriptBlobStorage {
      * @returns Promise indicating deletion success
      */
     async deleteAllVersions(sourceId: string): Promise<void> {
-        const versions = await this.listVersions(sourceId);
+        // Get all versions from Supabase
+        const { data, error } = await this.supabase
+            .from('transcript_metadata')
+            .select('blob_key')
+            .eq('source_id', sourceId);
 
-        // Delete all versions concurrently
+        if (error) {
+            throw new Error(`Failed to find transcript versions: ${error.message}`);
+        }
+
+        if (!data || data.length === 0) {
+            return;
+        }
+
+        // Delete all blobs concurrently
         await Promise.all(
-            versions.map(version => del(version.blobKey))
+            data.map(item => del(item.blob_key))
         );
+
+        // Delete all metadata records
+        const { error: deleteError } = await this.supabase
+            .from('transcript_metadata')
+            .delete()
+            .eq('source_id', sourceId);
+
+        if (deleteError) {
+            throw new Error(`Failed to delete transcript metadata: ${deleteError.message}`);
+        }
     }
 
     /**
@@ -274,12 +502,18 @@ export class TranscriptBlobStorage {
      * @returns Promise with latest version number (0 if none exists)
      */
     private async getLatestVersion(sourceId: string): Promise<number> {
-        try {
-            const versions = await this.listVersions(sourceId);
-            return versions.length > 0 ? versions[0].metadata.version : 0;
-        } catch (error) {
+        const { data, error } = await this.supabase
+            .from('transcript_metadata')
+            .select('version')
+            .eq('source_id', sourceId)
+            .order('version', { ascending: false })
+            .limit(1);
+
+        if (error || !data || data.length === 0) {
             return 0;
         }
+
+        return data[0].version;
     }
 
     /**
@@ -290,34 +524,5 @@ export class TranscriptBlobStorage {
      */
     private generateBlobKey(sourceId: string, version: number): string {
         return `${this.pathPrefix}/${sourceId}/v${version}_${nanoid(8)}`;
-    }
-
-    /**
-     * Extracts metadata from a head response
-     * @param headResponse Head response from blob storage
-     * @returns Transcript metadata
-     */
-    private extractMetadata(headResponse: HeadResponse): TranscriptMetadata {
-        return this.parseBlobMetadata(headResponse.metadata as unknown as Record<string, string>);
-    }
-
-    /**
-     * Parses blob metadata from Record<string, string> to TranscriptMetadata
-     * @param metadata Raw metadata from blob storage
-     * @returns Parsed transcript metadata
-     */
-    private parseBlobMetadata(metadata: Record<string, string>): TranscriptMetadata {
-        return {
-            sourceId: metadata.sourceId,
-            title: metadata.title,
-            date: metadata.date,
-            speakers: JSON.parse(metadata.speakers || '[]'),
-            version: parseInt(metadata.version || '1', 10),
-            format: (metadata.format as TranscriptMetadata['format']) || 'json',
-            processingStatus: (metadata.processingStatus as TranscriptMetadata['processingStatus']) || 'pending',
-            uploadedAt: metadata.uploadedAt,
-            processingCompletedAt: metadata.processingCompletedAt,
-            tags: metadata.tags ? JSON.parse(metadata.tags) : undefined
-        };
     }
 }
