@@ -9,8 +9,10 @@ export default () => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
     console.log(supabaseKey, supabaseUrl)
+    const testRunId = `test-run-${Date.now()}`;
     return {
-        storage: new TranscriptStorage(supabaseUrl, supabaseKey, 'test-transcripts'),
-        keys: [supabaseUrl, supabaseKey]
+        storage: new TranscriptStorage(supabaseUrl, supabaseKey, `test-transcripts-${testRunId}`),
+        keys: [supabaseUrl, supabaseKey],
+        testRunId
     }
 }

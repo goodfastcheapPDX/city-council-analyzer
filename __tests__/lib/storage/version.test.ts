@@ -1,3 +1,4 @@
+// @vitest-environment-options { "isolate": true }
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { TranscriptStorage, TranscriptMetadata } from '../../../lib/storage/blob';
 import createStorage from './createStorage';
@@ -5,7 +6,7 @@ import createStorage from './createStorage';
 // Test timeout for network operations
 const TIMEOUT = 15000;
 
-describe('TranscriptStorage - Version Management', () => {
+describe.sequential('TranscriptStorage - Version Management', () => {
     let storage: TranscriptStorage;
     const testSourceId = `version-mgmt-test-${Date.now()}`;
 

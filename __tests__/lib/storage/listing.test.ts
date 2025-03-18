@@ -1,3 +1,4 @@
+// @vitest-environment-options { "isolate": true }
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { TranscriptStorage, TranscriptMetadata } from '../../../lib/storage/blob';
 import createStorage from './createStorage';
@@ -11,7 +12,7 @@ const TIMEOUT = 15000;
  */
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-describe('TranscriptStorage - Listing and Search Functionality', () => {
+describe.sequential('TranscriptStorage - Listing and Search Functionality', () => {
     let storage: TranscriptStorage;
     const testSourceIds: string[] = [];
 

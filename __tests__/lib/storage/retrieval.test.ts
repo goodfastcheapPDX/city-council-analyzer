@@ -1,4 +1,4 @@
-// tests/storage/retrieval.test.ts
+// @vitest-environment-options { "isolate": true }
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { TranscriptStorage, TranscriptMetadata } from '../../../lib/storage/blob';
 import { DateTime } from 'luxon';
@@ -9,7 +9,7 @@ import createStorage from './createStorage';
 // Test timeout for network operations
 const TIMEOUT = 15000;
 
-describe('TranscriptStorage - Retrieval Functionality', () => {
+describe.sequential('TranscriptStorage - Retrieval Functionality', () => {
     let storage: TranscriptStorage;
 
     // Test data

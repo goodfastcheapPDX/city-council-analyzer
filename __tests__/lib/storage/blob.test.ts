@@ -1,8 +1,9 @@
+// @vitest-environment-options { "isolate": true }
 import { describe, it, expect, beforeAll } from 'vitest';
 import { TranscriptStorage } from '../../../lib/storage/blob';
 import createStorage from './createStorage';
 
-describe('TranscriptStorage - Database Connection', () => {
+describe.sequential('TranscriptStorage - Database Connection', () => {
   // Connection timeout
   const TIMEOUT = 10000;
 

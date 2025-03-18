@@ -20,5 +20,6 @@ export default defineConfig({
         },
         setupFiles: ['./vitest.setup.ts'],
         testTimeout: 30000, // Allow enough time for Docker tests
+        fileParallelism: false, // Run test files sequentially
     },
 });

@@ -329,16 +329,24 @@ export class TranscriptStorage {
      * @param offset Optional offset for pagination
      * @returns Promise with array of transcripts (latest version of each)
      */
-    async listTranscripts(limit: number = 0, offset?: number): Promise<{
+    async listTranscripts(limit: number = 0, offset: number = 10): Promise<{
         items: TranscriptBlobListItem[];
         total: number;
     }> {
+        // The starting index from which to limit the result
+        const from = offset
+
+        /* The last index to which to limit the result, inclusive.
+        If limit = 10 and offset = 0, to = 9.
+        In this example, .range() will return the first through the tenth rows */
+        const to = offset + (Math.max(limit - 1, 0))
+
         // This query gets the latest version of each transcript
         const { data, error, count } = await this.supabase
             .from('transcript_metadata_latest_view')
             .select('*', { count: 'exact' })
             .order('uploaded_at', { ascending: false })
-            .range(offset || 0, (offset || 0) + (limit - 1 || 9))
+            .range(from, to)
 
         if (error) {
             throw new Error(`Failed to list transcripts: ${error.message}`);
@@ -569,5 +577,17 @@ export class TranscriptStorage {
      */
     private generateBlobKey(sourceId: string, version: number): string {
         return `${this.pathPrefix}/${sourceId}/v${version}_${nanoid(8)}`;
+    }
+
+    async beginTransaction(): Promise<void> {
+        await this.supabase.rpc('begin_transaction');
+    }
+
+    async commitTransaction(): Promise<void> {
+        await this.supabase.rpc('commit_transaction');
+    }
+
+    async rollbackTransaction(): Promise<void> {
+        await this.supabase.rpc('rollback_transaction');
     }
 }

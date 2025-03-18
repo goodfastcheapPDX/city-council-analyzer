@@ -14,7 +14,8 @@
         "test:coverage": "vitest run --coverage",
         "docker:up": "docker-compose up -d",
         "docker:down": "docker-compose down",
-        "test:with-docker": "npm run docker:up && npm run test:integration && npm run docker:down"
+        "test:with-docker": "npm run docker:up && npm run test:integration && npm run docker:down",
+        "test:storage": "vitest run lib/storage --max-concurrency=1 --sequence.concurrent=false"
     },
     "dependencies": {
         "@supabase/supabase-js": "^2.39.0",

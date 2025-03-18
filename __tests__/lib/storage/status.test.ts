@@ -1,3 +1,4 @@
+// @vitest-environment-options { "isolate": true }
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { TranscriptStorage } from '../../../lib/storage/blob';
 import { createClient } from '@supabase/supabase-js';
@@ -6,7 +7,7 @@ import createStorage from './createStorage';
 // Test timeout for network operations
 const TIMEOUT = 15000;
 
-describe('TranscriptStorage - Status Update Functionality', () => {
+describe.sequential('TranscriptStorage - Status Update Functionality', () => {
     let storage: TranscriptStorage;
     let supabase: ReturnType<typeof createClient>;
     const testSourceId = `status-test-${Date.now()}`;
