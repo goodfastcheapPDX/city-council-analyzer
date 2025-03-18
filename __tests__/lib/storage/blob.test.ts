@@ -1,9 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { TranscriptStorage } from '../../../lib/storage/blob';
-import dotenv from 'dotenv';
-
-// Load environment variables from .env.test file
-dotenv.config({ path: '.env.test' });
+import createStorage from './createStorage';
 
 describe('TranscriptStorage - Database Connection', () => {
   // Connection timeout
@@ -12,12 +9,7 @@ describe('TranscriptStorage - Database Connection', () => {
   let storage: TranscriptStorage;
 
   beforeAll(() => {
-    // Create a TranscriptStorage instance with environment variables
-    // These would typically be set in your .env.test file pointing to your Docker container
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:8000';
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJzZXJ2aWNlX3JvbGUiLAogICAgImlzcyI6ICJzdXBhYmFzZS1kZW1vIiwKICAgICJpYXQiOiAxNjQxNzY5MjAwLAogICAgImV4cCI6IDE3OTk1MzU2MDAKfQ.DaYlNEoUrrEn2Ig7tqibS-PHK5vgusbcbo7X36XVt4Q"
-
-    storage = new TranscriptStorage(supabaseUrl, supabaseKey, 'test-transcripts');
+    storage = createStorage().storage
   });
 
   it('should connect to the database and initialize tables', async () => {

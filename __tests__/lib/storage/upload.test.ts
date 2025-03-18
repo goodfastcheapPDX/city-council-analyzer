@@ -1,11 +1,7 @@
-// tests/storage/upload.test.ts
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import { TranscriptStorage, TranscriptMetadata } from '../../../lib/storage/blob';
-import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
-
-// Load environment variables
-dotenv.config({ path: '.env.test' });
+import createStorage from './createStorage';
 
 // Test timeout for network operations
 const TIMEOUT = 15000;
@@ -48,13 +44,10 @@ describe('TranscriptStorage - Upload Functionality', () => {
     };
 
     beforeAll(async () => {
-        // Get Supabase connection details from environment
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:8000';
-        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
-
         // Create storage and direct Supabase client for cleanup
-        storage = new TranscriptStorage(supabaseUrl, supabaseKey, 'test-transcripts');
-        supabase = createClient(supabaseUrl, supabaseKey);
+        const store = createStorage()
+        storage = store.storage
+        supabase = createClient(store.keys[0], store.keys[1]);
 
         // Track created sourceIds for cleanup
         testSourceIds.push(sampleMetadata.sourceId);

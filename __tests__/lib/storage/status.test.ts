@@ -1,11 +1,7 @@
-// tests/storage/status.test.ts
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { TranscriptStorage } from '../../../lib/storage/blob';
 import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config({ path: '.env.test' });
+import createStorage from './createStorage';
 
 // Test timeout for network operations
 const TIMEOUT = 15000;
@@ -17,14 +13,11 @@ describe('TranscriptStorage - Status Update Functionality', () => {
 
     // Set up before tests
     beforeAll(async () => {
-        // Get Supabase connection details from environment
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:8000';
-        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
-
         // Create storage instance
-        storage = new TranscriptStorage(supabaseUrl, supabaseKey, 'test-transcripts');
+        const store = createStorage()
+        storage = store.storage
 
-        supabase = createClient(supabaseUrl, supabaseKey);
+        supabase = createClient(store.keys[0], store.keys[1]);
 
         // Initialize database
         await storage.initializeDatabase();
