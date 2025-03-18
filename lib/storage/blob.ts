@@ -2,10 +2,7 @@
 import {
     put,
     del,
-    list,
     head,
-    type PutBlobResult,
-    type HeadBlobResult
 } from '@vercel/blob';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { nanoid } from 'nanoid';

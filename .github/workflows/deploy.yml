@@ -16,6 +16,11 @@ jobs:
         run: rm package-lock.json && rm -rf node_modules && npm install
       - name: Run tests
         run: npm test
+        env:
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v20
         with:
