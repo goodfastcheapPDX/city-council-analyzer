@@ -7,7 +7,7 @@
         "build": "next build",
         "start": "next start",
         "lint": "next lint",
-        "test": "vitest run",
+        "test": "npm run test:storage",
         "test:watch": "vitest",
         "test:integration": "vitest run tests/integration",
         "test:unit": "vitest run tests/unit",
