@@ -7,7 +7,7 @@
         "build": "next build",
         "start": "next start",
         "lint": "next lint",
-        "test": "npm run test:storage",
+        "test": "vitest",
         "test:watch": "vitest",
         "test:integration": "vitest run tests/integration",
         "test:unit": "vitest run tests/unit",
@@ -15,11 +15,15 @@
         "docker:up": "docker-compose up -d",
         "docker:down": "docker-compose down",
         "test:with-docker": "npm run docker:up && npm run test:integration && npm run docker:down",
-        "test:storage": "vitest run lib/storage --max-concurrency=1 --sequence.concurrent=false"
+        "test:storage": "vitest run src/lib/storage --max-concurrency=1 --sequence.concurrent=false"
     },
     "dependencies": {
+        "@radix-ui/react-label": "^2.1.2",
+        "@radix-ui/react-progress": "^1.1.2",
+        "@radix-ui/react-select": "^2.1.6",
         "@supabase/supabase-js": "^2.39.0",
         "@vercel/blob": "^0.15.1",
+        "class-variance-authority": "^0.7.1",
         "install": "^0.13.0",
         "lucide-react": "^0.483.0",
         "luxon": "^3.5.0",
@@ -29,7 +33,9 @@
         "npm": "^11.2.0",
         "react": "^18",
         "react-dom": "^18",
-        "sonner": "^2.0.1"
+        "sonner": "^2.0.1",
+        "tailwindcss-animate": "^1.0.7",
+        "zod": "^3.24.2"
     },
     "devDependencies": {
         "@tailwindcss/postcss": "^4.0.14",
@@ -38,14 +44,17 @@
         "@types/react": "18.3.12",
         "@types/react-dom": "^18",
         "@vitest/coverage-v8": "^1.3.1",
-        "autoprefixer": "^10",
+        "autoprefixer": "^10.4.21",
+        "clsx": "^2.1.1",
         "dotenv": "^16.4.7",
         "eslint": "^8",
         "eslint-config-next": "13.5.4",
         "fast-check": "^3.13.2",
-        "postcss": "^8",
-        "tailwindcss": "^3",
+        "postcss": "^8.5.3",
+        "tailwind-merge": "^3.0.2",
+        "tailwindcss": "^4.0.14",
         "typescript": "^5",
-        "vitest": "^1.3.1"
+        "vite-tsconfig-paths": "^5.1.4",
+        "vitest": "^3.0.9"
     }
 }
