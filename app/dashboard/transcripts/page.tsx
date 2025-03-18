@@ -1,7 +1,6 @@
-// app/dashboard/transcripts/page.tsx
 import { Metadata } from 'next';
 import TranscriptUpload, { TranscriptList } from '@/components/transcript/TranscriptUpload';
-import { Toaster } from '@/components/ui/toaster';
+import { Toaster } from '@/components/ui/sonner';
 
 export const metadata: Metadata = {
     title: 'Transcript Management | Transcript Analysis System',
