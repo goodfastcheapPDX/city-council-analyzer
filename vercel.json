@@ -8,13 +8,6 @@
     "regions": [
         "iad1"
     ],
-    "env": {
-        "NEXT_PUBLIC_APP_URL": {
-            "development": "http://localhost:3000",
-            "preview": "https://${VERCEL_URL}",
-            "production": "https://${VERCEL_URL}"
-        }
-    },
     "crons": [
         {
             "path": "/api/cron/cleanup-blobs",
