@@ -92,9 +92,23 @@ export class TranscriptStorage {
         content: string | ArrayBuffer | ReadableStream<any> | Readable | Blob | FormData | File,
         metadata: Omit<TranscriptMetadata, 'uploadedAt' | 'version'>
     ): Promise<TranscriptBlobResponse> {
+        // Check for required fields
+        if (!metadata.sourceId) {
+            throw new Error('Source ID is required');
+        }
+
+        // Ensure speakers is always an array
+        const speakers = metadata.speakers || [];
+        if (!Array.isArray(speakers)) {
+            throw new Error('Speakers must be an array');
+        }
+
         // Get the latest version if this sourceId already exists
         const currentVersion = await this.getLatestVersion(metadata.sourceId);
-        const version = currentVersion + 1;
+        console.log(`Current version for ${metadata.sourceId}: ${currentVersion}`);
+
+        const version = Number(currentVersion) + 1;
+        console.log(`New version will be: ${version}`);
 
         // Create blob key with versioning
         const blobKey = this.generateBlobKey(metadata.sourceId, version);
@@ -102,9 +116,10 @@ export class TranscriptStorage {
         // Complete the metadata
         const fullMetadata: TranscriptMetadata = {
             ...metadata,
+            speakers, // Use the validated speakers array
             version,
             uploadedAt: new Date().toISOString(),
-            processingStatus: 'pending'
+            processingStatus: metadata.processingStatus || 'pending'
         };
 
         // Upload to Vercel Blob
@@ -181,12 +196,16 @@ export class TranscriptStorage {
 
         const { data, error } = await query;
 
-        if (error || !data || data.length === 0) {
+        if (error) {
+            throw new Error(`Failed to query transcript metadata: ${error.message}`);
+        }
+
+        if (!data || data.length === 0) {
             throw new Error(`Transcript with sourceId ${sourceId}${version ? ` and version ${version}` : ''} not found`);
         }
 
         const metadataRecord = data[0];
-        const blobKey = metadataRecord.blob_key;
+        const blobKey = metadataRecord.url;
 
         // Get content from Vercel Blob
         const headResponse = await head(blobKey);
@@ -208,7 +227,7 @@ export class TranscriptStorage {
             sourceId: metadataRecord.source_id,
             title: metadataRecord.title,
             date: metadataRecord.date,
-            speakers: metadataRecord.speakers,
+            speakers: metadataRecord.speakers || [], // Ensure speakers is always an array
             version: metadataRecord.version,
             format: metadataRecord.format,
             processingStatus: metadataRecord.processing_status,
@@ -278,6 +297,7 @@ export class TranscriptStorage {
             .eq('source_id', sourceId)
             .order('version', { ascending: false });
 
+        console.log(data)
         if (error) {
             throw new Error(`Failed to list transcript versions: ${error.message}`);
         }
@@ -312,7 +332,7 @@ export class TranscriptStorage {
      * @param offset Optional offset for pagination
      * @returns Promise with array of transcripts (latest version of each)
      */
-    async listTranscripts(limit?: number, offset?: number): Promise<{
+    async listTranscripts(limit: number = 0, offset?: number): Promise<{
         items: TranscriptBlobListItem[];
         total: number;
     }> {
@@ -321,7 +341,7 @@ export class TranscriptStorage {
             .from('transcript_metadata_latest_view')
             .select('*', { count: 'exact' })
             .order('uploaded_at', { ascending: false })
-            .range(offset || 0, (offset || 0) + (limit || 9))
+            .range(offset || 0, (offset || 0) + (limit - 1 || 9))
 
         if (error) {
             throw new Error(`Failed to list transcripts: ${error.message}`);
@@ -447,7 +467,7 @@ export class TranscriptStorage {
         // Get the blob key from Supabase
         const { data, error } = await this.supabase
             .from('transcript_metadata')
-            .select('blob_key')
+            .select('url')
             .eq('source_id', sourceId)
             .eq('version', version)
             .single();
@@ -456,7 +476,7 @@ export class TranscriptStorage {
             throw new Error(`Transcript version not found: ${error?.message || 'Record not found'}`);
         }
 
-        const blobKey = data.blob_key;
+        const blobKey = data.url;
 
         // Delete from Vercel Blob
         await del(blobKey);
@@ -482,7 +502,7 @@ export class TranscriptStorage {
         // Get all versions from Supabase
         const { data, error } = await this.supabase
             .from('transcript_metadata')
-            .select('blob_key')
+            .select('url')
             .eq('source_id', sourceId);
 
         if (error) {
@@ -495,7 +515,7 @@ export class TranscriptStorage {
 
         // Delete all blobs concurrently
         await Promise.all(
-            data.map(item => del(item.blob_key))
+            data.map(item => del(item.url))
         );
 
         // Delete all metadata records
@@ -522,11 +542,26 @@ export class TranscriptStorage {
             .order('version', { ascending: false })
             .limit(1);
 
-        if (error || !data || data.length === 0) {
+        if (error) {
+            console.error(`Error retrieving latest version for ${sourceId}:`, error);
+            throw new Error(`Failed to retrieve latest version: ${error.message}`);
+        }
+
+        // Add more verbose logging for debugging
+        console.log(`getLatestVersion for ${sourceId} returned data:`, data);
+
+        if (!data || data.length === 0) {
             return 0;
         }
 
-        return data[0].version;
+        // Ensure we're getting a number
+        const version = Number(data[0].version);
+        if (isNaN(version)) {
+            console.warn(`Invalid version returned from database: ${data[0].version}`);
+            return 0;
+        }
+
+        return version;
     }
 
     /**
