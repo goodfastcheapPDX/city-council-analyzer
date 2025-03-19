@@ -1,15 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     reactStrictMode: true,
-    swcMinify: true,
     images: {
         domains: ['vercel-blob.com'],
         formats: ['image/avif', 'image/webp'],
     },
-    experimental: {
-        serverActions: true,
-        serverComponentsExternalPackages: ['@vercel/postgres'],
-    },
+    serverExternalPackages: ['@vercel/postgres'],
     async headers() {
         return [
             {

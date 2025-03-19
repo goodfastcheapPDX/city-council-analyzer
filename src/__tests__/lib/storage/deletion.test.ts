@@ -58,6 +58,7 @@ describe.sequential('TranscriptStorage - Deletion Functionality', () => {
             await storage.deleteAllVersions(testSourceId);
         } catch (error) {
             // Ignore cleanup errors - the test might have already deleted everything
+            return error
         }
     }, TIMEOUT);
 

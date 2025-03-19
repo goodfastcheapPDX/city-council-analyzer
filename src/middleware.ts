@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server';
 /**
  * Error handling middleware for API routes
  */
-export function errorHandlingMiddleware(request: NextRequest, context: any) {
+export function errorHandlingMiddleware(_request: NextRequest, context: any) {
     try {
         return context.next();
     } catch (error) {

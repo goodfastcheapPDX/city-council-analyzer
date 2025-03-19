@@ -86,7 +86,7 @@ export class TranscriptStorage {
      * @returns Promise with upload response
      */
     async uploadTranscript(
-        content: string | ArrayBuffer | ReadableStream<any> | Readable | Blob | FormData | File,
+        content: Parameters<typeof put>[1],
         metadata: Omit<TranscriptMetadata, 'uploadedAt' | 'version'>
     ): Promise<TranscriptBlobResponse> {
         // Check for required fields
