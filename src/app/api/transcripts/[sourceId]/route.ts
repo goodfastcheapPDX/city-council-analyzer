@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { TranscriptStorage } from '@/lib/storage/blob';
-
-// Initialize blob storage
-const transcriptStorage = new TranscriptStorage();
+import { getTranscriptStorage } from '@/lib/storage/createStorage'
 
 type Params = { params: Promise<{ sourceId: string }> }
 
 // Handler for GET /api/transcripts/[sourceId]
 export async function GET(request: NextRequest, { params }: Params
 ) {
+    const transcriptStorage = getTranscriptStorage();
     const { sourceId } = await params
     try {
         const { searchParams } = new URL(request.nextUrl);
@@ -34,6 +32,7 @@ export async function GET(request: NextRequest, { params }: Params
 
 // Handler for DELETE /api/transcripts/[sourceId]
 export async function DELETE(request: NextRequest, { params }: Params) {
+    const transcriptStorage = getTranscriptStorage();
     const { sourceId } = await params
     try {
         const { searchParams } = new URL(request.url);
@@ -64,6 +63,8 @@ export async function DELETE(request: NextRequest, { params }: Params) {
 
 // Handler for PATCH /api/transcripts/[sourceId]
 export async function PATCH(request: NextRequest, { params }: Params) {
+    const transcriptStorage = getTranscriptStorage();
+
     const { sourceId } = await params
     try {
         const body = await request.json();

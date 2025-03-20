@@ -1,14 +1,15 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { TranscriptStorage, TranscriptMetadata } from '@/lib/storage/blob';
-import { createClient } from '@supabase/supabase-js';
-import createStorage from './createStorage';
-
+import { getTranscriptStorage } from '@/lib/storage/createStorage';
+import { __setTestStorage, __resetStorage } from '@/lib/storage/createStorage';
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.test' });
 // Test timeout for network operations
 const TIMEOUT = 15000;
 
 describe.sequential('TranscriptStorage - Deletion Functionality', () => {
     let storage: TranscriptStorage;
-    let supabase: ReturnType<typeof createClient>;
+    let supabase: any
     let testSourceId: string;
 
     // Set up before each test
@@ -16,9 +17,8 @@ describe.sequential('TranscriptStorage - Deletion Functionality', () => {
         // Generate a unique sourceId for each test
         testSourceId = `deletion-test-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 
-        const store = createStorage()
-        storage = store.storage
-        supabase = createClient(store.keys[0], store.keys[1])
+        storage = getTranscriptStorage()
+        supabase = storage.supabase
 
         // Initialize database
         await storage.initializeDatabase();

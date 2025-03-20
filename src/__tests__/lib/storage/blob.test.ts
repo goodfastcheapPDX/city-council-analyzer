@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { TranscriptStorage } from '@/lib/storage/blob';
-import createStorage from './createStorage';
+import { getTranscriptStorage } from '@/lib/storage/createStorage';
+import { __setTestStorage, __resetStorage } from '@/lib/storage/createStorage';
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.test' });
 
 describe.sequential('TranscriptStorage - Database Connection', () => {
   // Connection timeout
@@ -9,7 +12,7 @@ describe.sequential('TranscriptStorage - Database Connection', () => {
   let storage: TranscriptStorage;
 
   beforeAll(() => {
-    storage = createStorage().storage
+    storage = getTranscriptStorage()
   });
 
   it('should connect to the database and initialize tables', async () => {

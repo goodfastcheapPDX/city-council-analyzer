@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { TranscriptStorage, TranscriptMetadata } from '@/lib/storage/blob';
-import createStorage from './createStorage';
+import { getTranscriptStorage } from '@/lib/storage/createStorage';
+import { __setTestStorage, __resetStorage } from '@/lib/storage/createStorage';
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.test' });
 
 // Test timeout for network operations
 const TIMEOUT = 15000;
@@ -32,7 +35,7 @@ describe.sequential('TranscriptStorage - Version Management', () => {
     // Set up before tests
     beforeAll(async () => {
         // Create storage and direct Supabase client for cleanup
-        storage = createStorage().storage
+        storage = getTranscriptStorage()
 
         // Initialize database
         await storage.initializeDatabase();

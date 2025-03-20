@@ -6,7 +6,7 @@ import {
 } from '@vercel/blob';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { nanoid } from 'nanoid';
-import { Readable } from 'stream';
+
 
 /**
  * Interface for transcript metadata
@@ -49,7 +49,7 @@ export interface TranscriptBlobListItem {
  */
 export class TranscriptStorage {
     private readonly pathPrefix: string;
-    private readonly supabase: SupabaseClient;
+    public readonly supabase: SupabaseClient;
 
     /**
      * Constructor for TranscriptStorage

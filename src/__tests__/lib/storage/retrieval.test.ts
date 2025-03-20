@@ -1,7 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { TranscriptStorage, TranscriptMetadata } from '@/lib/storage/blob';
 import { DateTime } from 'luxon';
-import createStorage from './createStorage';
+import { getTranscriptStorage } from '@/lib/storage/createStorage';
+import { __setTestStorage, __resetStorage } from '@/lib/storage/createStorage';
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.test' });
 
 
 
@@ -34,7 +37,7 @@ describe.sequential('TranscriptStorage - Retrieval Functionality', () => {
     // Set up before tests
     beforeAll(async () => {
         // Create storage instance
-        storage = createStorage().storage
+        storage = getTranscriptStorage()
 
         // Initialize database
         await storage.initializeDatabase();
