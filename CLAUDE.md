@@ -50,6 +50,13 @@ claude/
 
 ## Development Guidelines
 
+### Development Methodology
+- **Test-Driven Development (TDD)** - Always write tests before implementation
+- **Red-Green-Refactor** cycle for all new functionality
+- **Behavior specification** through tests, not implementation details
+
+**For TDD guidelines**: See `claude/rules/test-driven-development.md`
+
 ### Testing Strategy
 - **Property-based testing** with Fast-Check for edge cases
 - **Realistic environments** over mocking (SQLite, Docker)
@@ -105,9 +112,10 @@ This repository includes automated guidance in the `./claude/` directory:
 - User requests that match rule patterns
 
 ### Available Rules
+- `test-driven-development.md` - TDD methodology and best practices
+- `testing-strategy.md` - Property-based testing approach
 - `backlog-management.md` - Issue creation and dependency tracking
 - `git-commit-style.md` - Commit message standards  
-- `testing-strategy.md` - Property-based testing approach
 - `issue-modernization-plan.md` - Architectural alignment process
 
 ### Rule Discovery Process
