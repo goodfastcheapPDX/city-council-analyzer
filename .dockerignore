@@ -1,0 +1,55 @@
+# Ignore everything from .gitignore
+node_modules
+/.pnp
+.pnp.js
+/coverage
+/.nyc_output
+/.next/
+/out/
+/build
+/dist
+.DS_Store
+*.pem
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.env*.local
+.env.development
+.env.test
+.env.production
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+.vscode
+.idea
+logs
+*.log
+.turbo
+.cache
+/uploads
+/public/uploads
+/coverage-reports
+/.artifacts
+
+# Docker specific ignores
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Git
+.git
+.gitignore
+
+# Documentation and config files not needed in container
+README.md
+LICENSE
+*.md
+.editorconfig
+
+# Development tools
+.eslintrc*
+.prettierrc*
+vitest.config.*
+tailwind.config.*
+postcss.config.*

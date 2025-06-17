@@ -1,0 +1,105 @@
+services:
+  # Main application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.docker
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - app-network
+
+  # Development container with all tools
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+      - "9229:9229" # Node.js debugging port
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    env_file:
+      - .env.docker
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - app-network
+    command: npm run dev
+
+  # PostgreSQL for local development and testing
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=transcript_analysis
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - app-network
+
+  # Redis for caching and job queue
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+    command: redis-server --appendonly yes
+
+  # Supabase Studio for database management (optional)
+  supabase-studio:
+    image: supabase/studio:latest
+    ports:
+      - "3001:3000"
+    env_file:
+      - .env.docker
+    networks:
+      - app-network
+    profiles:
+      - tools
+
+  # Test runner container
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+    env_file:
+      - .env.test
+    environment:
+      - NODE_ENV=test
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - app-network
+    command: npm run test
+    profiles:
+      - test
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  app-network:
+    driver: bridge

@@ -12,7 +12,7 @@
         "test:integration": "vitest run tests/integration",
         "test:unit": "vitest run tests/unit",
         "test:coverage": "vitest run --coverage",
-        "docker:up": "docker-compose up -d",
+        "docker:up": "docker-compose up --build dev",
         "docker:down": "docker-compose down",
         "test:with-docker": "npm run docker:up && npm run test:integration && npm run docker:down",
         "test:storage": "vitest run src/lib/storage --max-concurrency=1 --sequence.concurrent=false"
