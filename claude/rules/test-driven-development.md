@@ -35,6 +35,12 @@ Apply this rule when:
 - Use property-based testing for thorough edge case coverage
 - Test integration points and external dependencies
 
+### 5. Test Rationale Documentation
+- Include comments explaining **why** each test is important
+- Describe the business value and consequences of the behavior being tested
+- Connect test purpose to system requirements and user needs
+- Help future developers understand the intent behind each test
+
 ## Good TDD Examples
 
 ### ✅ Example 1: Transcript Validation
@@ -48,6 +54,9 @@ import * as fc from 'fast-check';
 describe('TranscriptValidator', () => {
   describe('validateTranscript', () => {
     it('should accept valid transcript with required fields', () => {
+      // This test ensures our validator correctly identifies valid transcripts,
+      // which is critical for preventing rejection of legitimate uploads and
+      // maintaining user confidence in the system.
       const validTranscript = {
         title: 'City Council Meeting',
         date: '2024-01-15',
@@ -62,6 +71,9 @@ describe('TranscriptValidator', () => {
     });
 
     it('should reject transcript with missing title', () => {
+      // This test verifies that missing required fields are caught early,
+      // preventing incomplete data from entering our processing pipeline
+      // and causing downstream failures or corrupted analysis results.
       const invalidTranscript = {
         date: '2024-01-15',
         speakers: ['Mayor Johnson'],
@@ -78,6 +90,9 @@ describe('TranscriptValidator', () => {
     });
 
     it('should reject transcript with invalid date format', () => {
+      // This property-based test ensures our system handles malformed dates
+      // gracefully, which is essential for data integrity and preventing
+      // temporal analysis errors in our AI processing pipeline.
       fc.assert(
         fc.property(
           fc.string().filter(s => !/^\d{4}-\d{2}-\d{2}$/.test(s)),
@@ -178,6 +193,9 @@ describe('TokenCounter', () => {
 
   describe('count', () => {
     it('should return accurate token count for simple text', async () => {
+      // This test verifies that token counting produces valid results,
+      // which is crucial for cost estimation and LLM request planning
+      // in our AI processing pipeline.
       const text = 'Hello world, this is a test.';
       
       const result = await tokenCounter.count(text);
@@ -188,12 +206,18 @@ describe('TokenCounter', () => {
     });
 
     it('should handle empty strings', async () => {
+      // This edge case test ensures our system gracefully handles empty content,
+      // preventing division-by-zero errors or incorrect cost calculations
+      // when processing minimal or filtered transcript segments.
       const result = await tokenCounter.count('');
       
       expect(result.count).toBe(0);
     });
 
     it('should provide fast estimation when requested', async () => {
+      // This performance test ensures our estimation mode meets speed requirements
+      // for real-time user feedback during transcript upload and preview,
+      // where exact token counts aren't required but speed is critical.
       const text = 'A'.repeat(1000);
       const startTime = Date.now();
       
@@ -206,6 +230,9 @@ describe('TokenCounter', () => {
     });
 
     it('should cache results for identical content', async () => {
+      // This test validates our caching mechanism, which is essential for
+      // performance optimization when processing large transcripts with
+      // repeated content or when users re-upload similar files.
       const text = 'Cacheable content for testing';
       
       const first = await tokenCounter.count(text);
@@ -215,8 +242,10 @@ describe('TokenCounter', () => {
       expect(second.count).toBe(first.count);
     });
 
-    // Property-based test for consistency
     it('should always return non-negative counts', () => {
+      // This property-based test ensures mathematical consistency across all inputs,
+      // preventing negative token counts that would break cost calculations
+      // and pipeline logic throughout our system.
       fc.assert(
         fc.property(fc.string(), async (text) => {
           const result = await tokenCounter.count(text);
@@ -297,6 +326,9 @@ describe('TranscriptParser', () => {
 ```typescript
 describe('TranscriptParser', () => {
   it('should extract content and metadata from JSON transcript', () => {
+    // This test verifies that our parser correctly extracts structured data
+    // from JSON transcripts, ensuring reliable data flow into our analysis
+    // pipeline regardless of the specific parsing implementation used.
     const parser = new TranscriptParser();
     const jsonInput = {
       content: 'Meeting discussion...',
@@ -346,9 +378,11 @@ export class TranscriptProcessor {
 
 **Better approach - TDD:**
 ```typescript
-// Start with one simple behavior test
 describe('TranscriptProcessor', () => {
   it('should preserve original content during processing', async () => {
+    // This fundamental test ensures that our processing pipeline never
+    // loses or corrupts the original transcript content, which is critical
+    // for maintaining data integrity and user trust in the system.
     const processor = new TranscriptProcessor();
     const input: RawTranscript = {
       content: 'Original meeting content',
@@ -396,6 +430,9 @@ describe('SegmentationService', () => {
 ```typescript
 describe('SegmentationService', () => {
   it('should split transcript into segments at speaker boundaries', () => {
+    // This test verifies that our segmentation correctly identifies speaker
+    // changes, which is fundamental for accurate attribution and analysis
+    // of who said what in city council proceedings.
     const service = new SegmentationService();
     const transcript = 'Mayor: Welcome everyone. Council Member: Thank you.';
     
@@ -409,6 +446,9 @@ describe('SegmentationService', () => {
   });
 
   it('should respect token limits when creating segments', () => {
+    // This test ensures our segmentation stays within LLM token limits,
+    // preventing API errors and ensuring consistent processing costs
+    // across transcripts of varying lengths.
     const service = new SegmentationService({ maxTokens: 10 });
     const longText = 'word '.repeat(20); // Creates text exceeding token limit
     
@@ -425,15 +465,30 @@ describe('SegmentationService', () => {
 
 ### Test Writing Process
 1. **Write test name first** - describe the behavior in plain English
-2. **Define expected inputs and outputs** - what should happen?
-3. **Write assertions** - verify the specific behavior
-4. **Run test (should fail)** - red phase
-5. **Write minimal implementation** - just enough to pass
-6. **Run test (should pass)** - green phase
-7. **Refactor if needed** - improve code quality
+2. **Write rationale comment** - explain why this test matters
+3. **Define expected inputs and outputs** - what should happen?
+4. **Write assertions** - verify the specific behavior
+5. **Run test (should fail)** - red phase
+6. **Write minimal implementation** - just enough to pass
+7. **Run test (should pass)** - green phase
+8. **Refactor if needed** - improve code quality
+
+### Writing Effective Test Rationale Comments
+Each test should include a comment that explains:
+- **Business importance**: Why this behavior matters to users or the system
+- **Consequences of failure**: What goes wrong if this test fails
+- **Context within system**: How this relates to broader functionality
+- **Edge case significance**: Why this particular scenario needs testing
+
+**Good rationale comment structure:**
+```typescript
+// This test ensures [specific behavior], which is [important because].
+// [Consequence] if this fails, [affecting] [users/system/data integrity].
+```
 
 ### Test Quality Checklist
 - [ ] Test name clearly describes expected behavior
+- [ ] Test includes comment explaining rationale and importance
 - [ ] Test focuses on observable outputs, not internal implementation
 - [ ] Assertions are specific and meaningful
 - [ ] Test covers one specific behavior or requirement
