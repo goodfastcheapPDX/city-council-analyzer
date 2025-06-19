@@ -14,10 +14,11 @@ describe.sequential('TranscriptStorage - Database Connection', () => {
     storage = createStorageForTest();
   });
 
-  it('should connect to the database and initialize tables', async () => {
-    // This test verifies that:
-    // 1. We can connect to the Supabase instance in Docker
-    // 2. The required tables can be initialized
+  it('should establish Supabase connection and create required tables when database is initialized', async () => {
+    // This test ensures that the foundational database connectivity works correctly,
+    // which is essential for all storage operations. If database connection fails,
+    // users cannot store or retrieve any transcripts, making the entire system
+    // unusable and preventing any transcript analysis or management functionality.
 
     try {
       await storage.initializeDatabase();
@@ -31,8 +32,11 @@ describe.sequential('TranscriptStorage - Database Connection', () => {
     }
   }, TIMEOUT);
 
-  it('should be able to perform a basic query', async () => {
-    // This test verifies we can execute a simple query operation
+  it('should execute listTranscripts query successfully when database connection is active', async () => {
+    // This test verifies that basic database operations work reliably, ensuring
+    // that the system can perform essential data retrieval tasks. Query failures
+    // would prevent users from browsing their transcript collections, searching
+    // for specific transcripts, and accessing their stored content.
 
     try {
       // Try listing transcripts (even if none exist yet)

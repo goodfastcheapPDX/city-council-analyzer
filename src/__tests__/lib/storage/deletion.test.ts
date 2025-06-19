@@ -62,6 +62,10 @@ describe.sequential('TranscriptStorage - Deletion Functionality', () => {
     }, TIMEOUT);
 
     it('should delete a specific version of a transcript', async () => {
+        // This test ensures that users can safely delete specific transcript versions
+        // without affecting other versions, providing precise control over their
+        // transcript history. Version-specific deletion is crucial for removing
+        // outdated or incorrect versions while preserving valuable content.
         // 1. Verify we have three versions to start
         let versions = await storage.listVersions(testSourceId);
         expect(versions.length).toBe(3);
@@ -108,6 +112,10 @@ describe.sequential('TranscriptStorage - Deletion Functionality', () => {
     }, TIMEOUT);
 
     it('should delete both blob and metadata when deleting a version', async () => {
+        // This test verifies that deletion operations maintain data consistency by
+        // removing both blob storage and database metadata simultaneously. Incomplete
+        // deletions could lead to orphaned data, storage cost issues, and system
+        // integrity problems that affect all users.
         // 1. Get the blob key for version 1 before deletion
         const { data, error } = await supabase
             .from('transcript_metadata')

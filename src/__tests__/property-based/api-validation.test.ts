@@ -309,12 +309,12 @@ describe('Property-Based API Validation Tests', () => {
                     }),
                     (metadata) => {
                         // Validate required fields
-                        const hasRequiredFields = metadata.sourceId && 
+                        const hasRequiredFields = Boolean(metadata.sourceId && 
                                                  metadata.title && 
                                                  metadata.date && 
                                                  metadata.speakers &&
                                                  metadata.format &&
-                                                 metadata.processingStatus;
+                                                 metadata.processingStatus);
 
                         // Validate format enum
                         const validFormats = ['json', 'text', 'srt', 'vtt'];

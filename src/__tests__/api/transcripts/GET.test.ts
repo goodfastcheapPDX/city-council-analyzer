@@ -46,6 +46,10 @@ describe('GET /api/transcripts/[sourceId]', () => {
     });
 
     test('successfully retrieves a transcript with default version', async () => {
+        // This test ensures that users can reliably access their transcripts through
+        // the API, which is fundamental to the system's usability. If transcript
+        // retrieval fails, users cannot view their uploaded content, breaking the
+        // core value proposition of transcript storage and analysis.
         // Create request with sourceId
         const request = new NextRequest('http://localhost/api/transcripts/transcript1');
         const response = await GET(request, {
@@ -61,6 +65,10 @@ describe('GET /api/transcripts/[sourceId]', () => {
     });
 
     test('retrieves a specific version when requested', async () => {
+        // This test verifies that version-specific retrieval works correctly,
+        // allowing users to access historical versions of their transcripts.
+        // This capability is crucial for comparing changes, reverting to previous
+        // versions, and maintaining transcript evolution tracking.
         const request = new NextRequest('http://localhost/api/transcripts/transcript1?version=1');
         const response = await GET(request, {
             params: Promise.resolve({ sourceId: 'transcript1' })
@@ -100,6 +108,9 @@ describe('GET /api/transcripts/[sourceId]', () => {
     });
 
     test('returns 404 for non-existent transcript', async () => {
+        // This test ensures that the API provides clear, consistent error responses
+        // for missing transcripts, helping users understand when they're requesting
+        // invalid resources and preventing confusion about transcript availability.
         const request = new NextRequest('http://localhost/api/transcripts/nonexistent');
         const response = await GET(request, {
             params: Promise.resolve({ sourceId: 'nonexistent' })
@@ -112,7 +123,7 @@ describe('GET /api/transcripts/[sourceId]', () => {
         expect(data.error).toContain('Failed to fetch transcript');
     });
 
-    test('handles invalid version parameter gracefully', async () => {
+    test('should return 404 error when version parameter contains non-numeric value', async () => {
         const request = new NextRequest('http://localhost/api/transcripts/transcript1?version=invalid');
         const response = await GET(request, {
             params: Promise.resolve({ sourceId: 'transcript1' })
@@ -127,6 +138,10 @@ describe('GET /api/transcripts/[sourceId]', () => {
     });
 
     test('handles error in storage service gracefully', async () => {
+        // This test verifies that storage layer failures don't crash the API,
+        // maintaining system stability during infrastructure issues. Graceful
+        // error handling ensures users receive meaningful error messages rather
+        // than system crashes, preserving user experience during outages.
         // Create a storage implementation that throws errors for testing
         const errorStorage = {
             getTranscript: async () => { throw new Error('Unexpected storage error'); },
@@ -149,7 +164,7 @@ describe('GET /api/transcripts/[sourceId]', () => {
     });
 
     // Testing URL encoding/decoding with special characters
-    test('handles sourceId with special characters', async () => {
+    test('should retrieve transcript successfully when sourceId contains URL-encoded special characters', async () => {
         // Add a transcript with special characters in ID
         testStorage.addTranscript('transcript/with?special&chars', 1, {
             id: 'transcript/with?special&chars',
@@ -169,7 +184,7 @@ describe('GET /api/transcripts/[sourceId]', () => {
     });
 
     // Property-based edge case tests
-    test('handles large version numbers correctly', async () => {
+    test('should retrieve transcript with maximum safe integer version number without overflow', async () => {
         const largeVersion = Number.MAX_SAFE_INTEGER;
         testStorage.addTranscript('transcript1', largeVersion, {
             id: 'transcript1',

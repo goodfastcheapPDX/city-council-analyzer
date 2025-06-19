@@ -67,6 +67,10 @@ describe.sequential('TranscriptStorage - Upload Functionality', () => {
     });
 
     it('should upload a transcript string successfully and return the correct metadata', async () => {
+        // This test ensures that the core transcript upload functionality works reliably,
+        // which is fundamental to the entire system's value proposition. If users cannot
+        // upload transcripts successfully, the system fails to provide any value, and
+        // incomplete uploads could lead to data loss and user frustration.
         // 1. Upload the transcript
         const result = await storage.uploadTranscript(sampleTranscript, sampleMetadata);
 
@@ -107,6 +111,10 @@ describe.sequential('TranscriptStorage - Upload Functionality', () => {
     }, TIMEOUT);
 
     it('should increment version numbers correctly for the same sourceId', async () => {
+        // This test verifies that version management works correctly, which is critical
+        // for allowing users to update transcripts while preserving their history.
+        // Version conflicts or incorrect numbering could lead to data overwriting,
+        // loss of transcript revisions, and confusion about which version is current.
         // Generate a unique sourceId for this test
         const versionTestSourceId = `version-test-${Date.now()}`;
         testSourceIds.push(versionTestSourceId);
