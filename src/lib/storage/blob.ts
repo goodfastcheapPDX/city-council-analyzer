@@ -1,10 +1,9 @@
-// lib/storage/blob.ts
 import {
     put,
     del,
     head,
 } from '@vercel/blob';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { type SupabaseClient } from '@supabase/supabase-js';
 import { nanoid } from 'nanoid';
 
 
@@ -53,17 +52,15 @@ export class TranscriptStorage {
 
     /**
      * Constructor for TranscriptStorage
-     * @param supabaseUrl Supabase URL
-     * @param supabaseKey Supabase API key
+     * @param supabaseClient Supabase client instance
      * @param pathPrefix Optional prefix for all blob paths
      */
     constructor(
-        supabaseUrl: string = String(process.env.NEXT_PUBLIC_SUPABASE_URL),
-        supabaseKey: string = String(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+        supabaseClient: SupabaseClient,
         pathPrefix: string = 'transcripts'
     ) {
         this.pathPrefix = pathPrefix;
-        this.supabase = createClient(supabaseUrl, supabaseKey);
+        this.supabase = supabaseClient;
     }
 
     /**
