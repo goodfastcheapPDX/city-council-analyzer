@@ -9,13 +9,12 @@
         "lint": "next lint",
         "test": "vitest run",
         "test:watch": "vitest",
-        "test:integration": "vitest run tests/integration",
-        "test:unit": "vitest run tests/unit",
         "test:coverage": "vitest run --coverage",
-        "docker:up": "docker-compose up --build dev",
-        "docker:down": "docker-compose down",
-        "test:with-docker": "npm run docker:up && npm run test:integration && npm run docker:down",
-        "test:storage": "vitest run src/lib/storage --max-concurrency=1 --sequence.concurrent=false"
+        "test:storage": "vitest run src/lib/storage --max-concurrency=1 --sequence.concurrent=false",
+        "database:start": "npx supabase start",
+        "database:stop": "npx supabase stop",
+        "database:reset": "npx supabase db reset",
+        "database:studio": "npx supabase studio"
     },
     "dependencies": {
         "@radix-ui/react-label": "^2.1.2",

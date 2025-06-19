@@ -9,8 +9,6 @@ services:
     env_file:
       - .env.docker
     depends_on:
-      - supabase-db
-      - supabase-kong
       - redis
     networks:
       - app-network
@@ -23,8 +21,6 @@ services:
     ports:
       - "3000:3000"
       - "9229:9229" # Node.js debugging port
-      - "54321:54321" # Supabase API
-      - "54323:54323" # Supabase Studio
     volumes:
       - .:/app
       - /app/node_modules
@@ -34,97 +30,10 @@ services:
     environment:
       - NODE_ENV=development
     depends_on:
-      - supabase-db
-      - supabase-kong
       - redis
     networks:
       - app-network
     command: npm run dev
-
-  # Supabase PostgreSQL Database
-  supabase-db:
-    image: supabase/postgres:15.8.1
-    ports:
-      - "54322:5432"
-    environment:
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=postgres
-      - POSTGRES_USER=postgres
-    volumes:
-      - supabase_db_data:/var/lib/postgresql/data
-      - ./supabase/migrations:/docker-entrypoint-initdb.d
-    networks:
-      - app-network
-
-  # Supabase Kong API Gateway  
-  supabase-kong:
-    image: kong:2.8-alpine
-    ports:
-      - "54321:8000"
-      - "54323:8443"
-    environment:
-      - KONG_DATABASE=off
-      - KONG_DECLARATIVE_CONFIG=/var/lib/kong/kong.yml
-      - KONG_DNS_ORDER=LAST,A,CNAME
-      - KONG_PLUGINS=request-id,kong-debug,request-transformer,response-transformer
-    volumes:
-      - ./supabase/kong.yml:/var/lib/kong/kong.yml:ro
-    depends_on:
-      - supabase-db
-    networks:
-      - app-network
-
-  # Supabase Auth (GoTrue)
-  supabase-auth:
-    image: supabase/gotrue:v2.174.0
-    environment:
-      - GOTRUE_API_HOST=0.0.0.0
-      - GOTRUE_API_PORT=9999
-      - GOTRUE_DB_DRIVER=postgres
-      - GOTRUE_DB_DATABASE_URL=postgresql://postgres:postgres@supabase-db:5432/postgres?search_path=auth
-      - GOTRUE_SITE_URL=http://localhost:3000
-      - GOTRUE_URI_ALLOW_LIST=
-      - GOTRUE_JWT_ADMIN_ROLES=service_role
-      - GOTRUE_JWT_AUD=authenticated
-      - GOTRUE_JWT_DEFAULT_GROUP_NAME=authenticated
-      - GOTRUE_JWT_EXP=3600
-      - GOTRUE_JWT_SECRET=super-secret-jwt-token-with-at-least-32-characters-long
-    depends_on:
-      - supabase-db
-    networks:
-      - app-network
-
-  # Supabase REST API (PostgREST)
-  supabase-rest:
-    image: postgrest/postgrest:v12.2.12
-    environment:
-      - PGRST_DB_URI=postgresql://postgres:postgres@supabase-db:5432/postgres
-      - PGRST_DB_SCHEMAS=public,storage,graphql_public
-      - PGRST_DB_ANON_ROLE=anon
-      - PGRST_JWT_SECRET=super-secret-jwt-token-with-at-least-32-characters-long
-      - PGRST_DB_USE_LEGACY_GUCS=false
-    depends_on:
-      - supabase-db
-    networks:
-      - app-network
-
-  # Supabase Realtime
-  supabase-realtime:
-    image: supabase/realtime:v2.30.23
-    environment:
-      - PORT=4000
-      - DB_HOST=supabase-db
-      - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_NAME=postgres
-      - DB_AFTER_CONNECT_QUERY=SET search_path TO _realtime
-      - DB_ENC_KEY=supabaserealtime
-      - SECRET_KEY_BASE=UpNVntn3cDxHJpq99YMc1T1AQgQpc8kfYTuRgBiYa15BLrx8etQoXz3gZv1/u2oq
-    depends_on:
-      - supabase-db
-    networks:
-      - app-network
 
   # Redis for caching and job queue
   redis:
@@ -137,30 +46,7 @@ services:
       - app-network
     command: redis-server --appendonly yes
 
-  # Test runner container
-  test:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-    volumes:
-      - .:/app
-      - /app/node_modules
-    env_file:
-      - .env.test
-    environment:
-      - NODE_ENV=test
-    depends_on:
-      - supabase-db
-      - supabase-kong
-      - redis
-    networks:
-      - app-network
-    command: npm run test
-    profiles:
-      - test
-
 volumes:
-  supabase_db_data:
   redis_data:
 
 networks:
