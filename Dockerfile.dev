@@ -14,6 +14,11 @@ RUN apk add --no-cache \
     g++ \
     && rm -rf /var/cache/apk/*
 
+# Install Supabase CLI
+RUN curl -L https://github.com/supabase/cli/releases/latest/download/supabase_linux_amd64.tar.gz | \
+    tar -xz -C /usr/local/bin/ && \
+    chmod +x /usr/local/bin/supabase
+
 # Install global npm packages for development
 RUN npm install -g \
     typescript \
