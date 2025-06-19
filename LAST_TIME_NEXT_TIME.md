@@ -1,79 +1,97 @@
 # Last Time / Next Time
 
-## Last Time (2025-06-16)
+## Last Time (2025-06-19)
 
 ### What We Accomplished
-✅ **Complete Docker Containerization**
-- Built production Dockerfile with Next.js standalone output
-- Created development Dockerfile with hot reload and debugging
-- Set up docker-compose.yml with PostgreSQL, Redis, and app services
-- Fixed environment variable loading via `.env.docker` files
-- Added comprehensive DOCKER.md documentation
-- Updated package.json scripts for Docker workflows
-- Successfully tested container startup and service orchestration
+✅ **Backend API Validation**
+- Confirmed POST `/api/transcripts` endpoint is working correctly
+- Successfully uploaded test transcripts to Vercel Blob Storage
+- Verified blob storage integration and metadata handling
+- Tested API with realistic city council transcript data
 
-✅ **Project Cleanup** 
-- Removed unused `src/middleware.ts` file
-- Updated Next.js config for Docker compatibility
-- Committed all changes with detailed commit message
+✅ **Sample Data Creation**
+- Created `sample-data/` directory with realistic test files
+- Added comprehensive city council meeting transcripts
+- Included budget hearing and regular meeting examples
+- Files ready for testing upload and processing workflows
+
+✅ **System Architecture Verification**
+- Confirmed Next.js development server runs successfully
+- Validated storage layer integration (Vercel Blob + Supabase)
+- Tested API schema validation and error handling
+- Identified frontend uses mock implementations (needs connection)
+
+### Current Status
+- **Backend APIs**: ✅ Working (upload tested successfully)
+- **Sample Data**: ✅ Ready for testing
+- **Frontend**: ❌ Uses mock data, needs API connection
+- **Data Listing**: ❌ GET endpoint shows count but no items
 
 ### Key Files Added
-- `Dockerfile` & `Dockerfile.dev` - Container definitions
-- `docker-compose.yml` - Service orchestration  
-- `DOCKER.md` - Complete usage documentation
-- `.dockerignore` - Optimized build context
-- `docker/postgres/init.sql` - Database initialization
+- `sample-data/README.md` - Documentation for test files
+- `sample-data/city-council-2024-01-15.txt` - Regular meeting transcript
+- `sample-data/city-council-2024-03-10.txt` - Budget hearing transcript  
+- `test-upload.json` - API testing payload
 
 ## Next Time
 
 ### Immediate Tasks (Next Session)
 
-1. **Docker Environment Improvements**
-   - [ ] Replace plain PostgreSQL with local Supabase instance in docker-compose
-   - [ ] Add Supabase CLI setup and local development instructions
-   - [ ] Update Docker environment to match production Supabase architecture
-   - [ ] Ensure pgvector extension and proper schema migrations
+1. **Frontend API Integration**
+   - [ ] Fix GET `/api/transcripts` listing issue (shows count but no items)
+   - [ ] Replace mock implementations in `TranscriptUpload.tsx` with real API calls
+   - [ ] Update file upload to handle `.txt` files (currently only accepts JSON)
+   - [ ] Test complete upload → storage → display workflow
 
-2. **Test Data & App Validation**
-   - [ ] Get sample transcript data for testing
-   - [ ] Start Docker environment: `npm run docker:up`  
-   - [ ] Test file upload through the web interface
-   - [ ] Verify data persistence and processing
+2. **User Interface Testing**
+   - [ ] Test file upload through the web interface using sample data
+   - [ ] Verify uploaded transcripts appear in the list view
+   - [ ] Check error handling for invalid files and large uploads
+   - [ ] Test responsive design and user experience flow
 
-3. **Testing Infrastructure** 
-   - [ ] Run test suite in Docker: `docker-compose --profile test up test`
-   - [ ] Verify all tests pass in containerized environment
-   - [ ] Check test coverage reports
+3. **Data Persistence Validation**
+   - [ ] Debug why uploaded transcripts don't appear in GET response
+   - [ ] Verify Supabase database connectivity and data insertion
+   - [ ] Test transcript retrieval by individual ID
+   - [ ] Confirm blob storage and metadata sync properly
 
-4. **User Experience Improvements**
-   - [ ] Add Next.js redirect from `/` to `/dashboard/transcripts`
-   - [ ] Create GitHub issue to revert redirect when proper landing page is built
-   - [ ] Test navigation flow
+4. **Complete End-to-End Testing**
+   - [ ] Upload all sample transcript files through the UI
+   - [ ] Verify data appears correctly in both blob storage and database
+   - [ ] Test search and filtering functionality (if implemented)
+   - [ ] Performance test with larger transcript files
 
-5. **Remote Services Health Check**
-   - [ ] Verify Vercel deployment is still functional
-   - [ ] Check Supabase project status and connectivity  
-   - [ ] Validate API keys and service integrations
-   - [ ] Test blob storage upload/download functionality
+5. **Development Environment Polish**
+   - [ ] Add proper error handling and user feedback in the UI
+   - [ ] Implement loading states and progress indicators
+   - [ ] Add file format validation and size limits
+   - [ ] Create redirect from `/` to `/dashboard/transcripts`
 
-### Development Environment Ready
-Docker setup is complete and tested. Use these commands:
+### API Testing Commands
+Backend is working and can be tested directly:
 ```bash
-# Start development environment
-npm run docker:up
+# Test GET endpoint
+curl -X GET http://localhost:3000/api/transcripts
 
-# Stop environment  
-npm run docker:down
+# Test POST endpoint with sample data
+curl -X POST http://localhost:3000/api/transcripts \
+  -H "Content-Type: application/json" \
+  -d @test-upload.json
 
-# Run tests
-docker-compose --profile test up test
+# Start development server
+npm run dev
 ```
 
+### Current Issues to Address
+1. **Listing Bug**: GET `/api/transcripts` returns `{"items":[],"total":2}` - count is correct but items array is empty
+2. **Frontend Disconnect**: Upload component uses mock functions instead of real API calls
+3. **File Format**: Frontend only accepts JSON but backend supports text formats
+
 ### Notes
-- All environment variables should be configured in `.env.docker`
-- PostgreSQL and Redis services included for full local development
-- Hot reload enabled for iterative development
-- Production build pipeline ready for deployment
+- Backend storage layer (Vercel Blob + Supabase) is confirmed working
+- Sample transcript data is ready in `sample-data/` directory
+- API schema validation working correctly
+- Need to connect frontend to working backend APIs
 
 ---
-*Last updated: 2025-06-16*
+*Last updated: 2025-06-19*

@@ -1,0 +1,10 @@
+{
+  "content": "CITY OF RIVERSIDE\nCITY COUNCIL MEETING TRANSCRIPT\nJanuary 15, 2024 - 7:00 PM\n\nMAYOR JOHNSON: Good evening everyone. I'd like to call this regular meeting of the Riverside City Council to order at 7:02 PM.\n\nCOUNCILMEMBER DAVIS: Thank you, Mayor. Please stand and join me in the Pledge of Allegiance.",
+  "metadata": {
+    "title": "City Council Meeting - January 15, 2024",
+    "date": "2024-01-15",
+    "speakers": ["Mayor Johnson", "Councilmember Davis"],
+    "format": "text",
+    "tags": ["city-council", "meeting", "test"]
+  }
+}
