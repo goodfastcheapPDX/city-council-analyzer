@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { TranscriptStorage } from '@/lib/storage/blob';
-import { getTranscriptStorage } from '@/lib/storage/createStorage';
-import { __setTestStorage, __resetStorage } from '@/lib/storage/createStorage';
+import { createStorageForTest } from '@/lib/storage/factories';
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env.test' });
 
@@ -17,7 +16,7 @@ describe.sequential('TranscriptStorage - Status Update Functionality', () => {
     // Set up before tests
     beforeAll(async () => {
         // Create storage instance
-        storage = getTranscriptStorage()
+        storage = createStorageForTest()
         supabase = storage.supabase
         // Initialize database
         await storage.initializeDatabase();
