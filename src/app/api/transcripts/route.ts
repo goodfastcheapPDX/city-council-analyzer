@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { TranscriptStorage } from '@/lib/storage/blob';
+import { createStorageForServer } from '@/lib/storage/factories';
 import { z } from 'zod';
-
-// Initialize blob storage
-const transcriptStorage = new TranscriptStorage();
 
 // Schema for transcript upload
 const transcriptUploadSchema = z.object({
@@ -21,6 +18,7 @@ const transcriptUploadSchema = z.object({
 // Handler for GET /api/transcripts
 export async function GET(request: NextRequest) {
     try {
+        const transcriptStorage = await createStorageForServer();
         const { searchParams } = new URL(request.url);
         const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!, 10) : undefined;
         const cursor = Number(searchParams.get('cursor') || undefined);
@@ -40,6 +38,7 @@ export async function GET(request: NextRequest) {
 // Handler for POST /api/transcripts
 export async function POST(request: NextRequest) {
     try {
+        const transcriptStorage = await createStorageForServer();
         const body = await request.json();
 
         // Validate request body

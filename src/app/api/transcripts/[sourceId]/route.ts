@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTranscriptStorage } from '@/lib/storage/createStorage'
+import { createStorageForServer } from '@/lib/storage/factories'
 
 type Params = { params: Promise<{ sourceId: string }> }
 
 // Handler for GET /api/transcripts/[sourceId]
 export async function GET(request: NextRequest, { params }: Params
 ) {
-    const transcriptStorage = getTranscriptStorage();
+    const transcriptStorage = await createStorageForServer();
     const { sourceId } = await params
     try {
         const { searchParams } = new URL(request.nextUrl);
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest, { params }: Params
 
 // Handler for DELETE /api/transcripts/[sourceId]
 export async function DELETE(request: NextRequest, { params }: Params) {
-    const transcriptStorage = getTranscriptStorage();
+    const transcriptStorage = await createStorageForServer();
     const { sourceId } = await params
     try {
         const { searchParams } = new URL(request.url);
@@ -63,7 +63,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
 
 // Handler for PATCH /api/transcripts/[sourceId]
 export async function PATCH(request: NextRequest, { params }: Params) {
-    const transcriptStorage = getTranscriptStorage();
+    const transcriptStorage = await createStorageForServer();
 
     const { sourceId } = await params
     try {

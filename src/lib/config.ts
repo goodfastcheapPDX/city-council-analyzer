@@ -64,8 +64,8 @@ export const config = {
 BLOB_READ_WRITE_TOKEN=your_blob_read_write_token
 
 # Database (Supabase)
-SUPABASE_URL=your_supabase_url
-SUPABASE_KEY=your_supabase_key
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 # API Keys
 OPENAI_API_KEY=your_openai_api_key
