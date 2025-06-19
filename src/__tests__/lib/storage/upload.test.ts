@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import { TranscriptStorage, TranscriptMetadata } from '@/lib/storage/blob';
-import { getTranscriptStorage } from '@/lib/storage/createStorage';
-import { __setTestStorage, __resetStorage } from '@/lib/storage/createStorage';
+import { createStorageForTest } from '@/lib/storage/factories';
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env.test' });
 
@@ -47,7 +46,7 @@ describe.sequential('TranscriptStorage - Upload Functionality', () => {
 
     beforeAll(async () => {
         // Create storage and direct Supabase client for cleanup
-        storage = getTranscriptStorage()
+        storage = createStorageForTest()
         supabase = storage.supabase
 
         // Track created sourceIds for cleanup
