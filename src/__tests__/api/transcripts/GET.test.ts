@@ -1,8 +1,8 @@
 import { NextRequest } from 'next/server';
-import { describe, test, expect, beforeEach, afterEach } from 'vitest';
+import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { GET } from '@/app/api/transcripts/[sourceId]/route';
-import { __setTestStorage, __resetStorage } from '@/lib/storage/createStorage';
 import { TestTranscriptStorage } from '@/__tests__/test-utils/TestTranscriptStorage'
+import * as factories from '@/lib/storage/factories';
 import dotenv from 'dotenv';
 
 describe('GET /api/transcripts/[sourceId]', () => {
@@ -14,8 +14,8 @@ describe('GET /api/transcripts/[sourceId]', () => {
         // Create a new test storage instance for each test
         testStorage = new TestTranscriptStorage();
 
-        // Configure the factory to use our test storage
-        __setTestStorage(testStorage);
+        // Mock the factory to return our test storage
+        vi.spyOn(factories, 'createStorageForServer').mockResolvedValue(testStorage as any);
 
         // Set up test data
         testStorage.addTranscript('transcript1', 1, {
@@ -41,8 +41,8 @@ describe('GET /api/transcripts/[sourceId]', () => {
         // Clean up test data
         testStorage.clearAll();
 
-        // Reset the factory to use the real implementation
-        __resetStorage();
+        // Restore all mocks
+        vi.restoreAllMocks();
     });
 
     test('successfully retrieves a transcript with default version', async () => {
@@ -133,8 +133,8 @@ describe('GET /api/transcripts/[sourceId]', () => {
             listVersions: async () => { throw new Error('Unexpected storage error'); }
         };
 
-        // Set the factory to use our error-throwing storage
-        __setTestStorage(errorStorage);
+        // Mock the factory to return our error-throwing storage
+        vi.spyOn(factories, 'createStorageForServer').mockResolvedValue(errorStorage as any);
 
         const request = new NextRequest('http://localhost/api/transcripts/transcript1');
         const response = await GET(request, {
