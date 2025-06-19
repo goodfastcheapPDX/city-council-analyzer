@@ -161,4 +161,16 @@ This repository includes automated guidance in the @claude directory:
 - API key authentication required
 - CORS configured for production domains
 
+## Session Coordination
+
+### Development Session Tracking
+- **@LAST_TIME_NEXT_TIME.md**: Session coordination file that maintains continuity across development sessions:
+  - **"Last Time" section**: Documents what was accomplished in the previous session
+  - **"Current Status"**: Tracks project state with clear ✅/❌ indicators
+  - **"Next Time" tasks**: Lists specific actionable priorities for the upcoming session
+  - **Testing commands**: Provides ready-to-run validation commands
+  - **Current issues**: Notes blockers and bugs that need resolution
+  
+This approach ensures no time is wasted figuring out where development left off and maintains focus on planned priorities across multi-system integrations (Next.js, Vercel Blob, Supabase).
+
 This document provides essential information for productive development. For detailed specifications, consult the architecture plan and implementation roadmap in the `claude/` directory.
