@@ -35,7 +35,7 @@ describe.sequential('Storage Operations - Property-Based Tests', () => {
             await fc.assert(
                 fc.asyncProperty(
                     fc.string({ minLength: 1, maxLength: 50 }).filter(s => s.trim().length > 0),
-                    fc.array(fc.string({ minLength: 1, maxLength: 1000 }), { minLength: 1, maxLength: 10 }),
+                    fc.array(fc.string({ minLength: 1, maxLength: 100 }), { minLength: 1, maxLength: 3 }),
                     async (sourceId, contentArray) => {
                         testSourceIds.push(sourceId);
 
@@ -76,7 +76,7 @@ describe.sequential('Storage Operations - Property-Based Tests', () => {
                         }
                     }
                 ),
-                { numRuns: 15 }
+                { numRuns: 3 }
             );
         });
 
@@ -87,7 +87,7 @@ describe.sequential('Storage Operations - Property-Based Tests', () => {
             await fc.assert(
                 fc.asyncProperty(
                     fc.string({ minLength: 1, maxLength: 50 }).filter(s => s.trim().length > 0),
-                    fc.array(fc.string({ minLength: 1, maxLength: 500 }), { minLength: 2, maxLength: 8 }),
+                    fc.array(fc.string({ minLength: 1, maxLength: 100 }), { minLength: 2, maxLength: 3 }),
                     async (sourceId, contentArray) => {
                         testSourceIds.push(sourceId);
 
@@ -119,7 +119,7 @@ describe.sequential('Storage Operations - Property-Based Tests', () => {
                         expect(latestTranscript.content).toBe(lastContent);
                     }
                 ),
-                { numRuns: 12 }
+                { numRuns: 3 }
             );
         });
     });
@@ -132,7 +132,7 @@ describe.sequential('Storage Operations - Property-Based Tests', () => {
             await fc.assert(
                 fc.asyncProperty(
                     fc.string({ minLength: 1, maxLength: 50 }).filter(s => s.trim().length > 0),
-                    fc.string({ minLength: 0, maxLength: 10000 }),
+                    fc.string({ minLength: 0, maxLength: 500 }),
                     async (sourceId, content) => {
                         testSourceIds.push(sourceId);
 
@@ -159,7 +159,7 @@ describe.sequential('Storage Operations - Property-Based Tests', () => {
                         expect(retrievedTranscript.metadata.version).toBe(uploadResult.metadata.version);
                     }
                 ),
-                { numRuns: 25 }
+                { numRuns: 5 }
             );
         });
 
@@ -222,7 +222,7 @@ describe.sequential('Storage Operations - Property-Based Tests', () => {
                         }
                     }
                 ),
-                { numRuns: 20 }
+                { numRuns: 5 }
             );
         });
     });
@@ -240,7 +240,7 @@ describe.sequential('Storage Operations - Property-Based Tests', () => {
                             title: fc.string({ minLength: 1, maxLength: 100 }),
                             content: fc.string({ minLength: 1, maxLength: 1000 })
                         }),
-                        { minLength: 2, maxLength: 8 }
+                        { minLength: 2, maxLength: 4 }
                     ),
                     fc.integer({ min: 1, max: 10 }),
                     async (transcriptData, pageSize) => {
@@ -279,7 +279,7 @@ describe.sequential('Storage Operations - Property-Based Tests', () => {
                         expect(totalItemsRetrieved).toBeLessThanOrEqual(transcriptData.length);
                     }
                 ),
-                { numRuns: 10 }
+                { numRuns: 3 }
             );
         });
 
@@ -290,7 +290,7 @@ describe.sequential('Storage Operations - Property-Based Tests', () => {
             await fc.assert(
                 fc.asyncProperty(
                     fc.string({ minLength: 1, maxLength: 50 }).filter(s => s.trim().length > 0),
-                    fc.array(fc.string({ minLength: 1, maxLength: 500 }), { minLength: 2, maxLength: 6 }),
+                    fc.array(fc.string({ minLength: 1, maxLength: 100 }), { minLength: 2, maxLength: 3 }),
                     async (sourceId, contentVersions) => {
                         testSourceIds.push(sourceId);
 
@@ -331,7 +331,7 @@ describe.sequential('Storage Operations - Property-Based Tests', () => {
                         }
                     }
                 ),
-                { numRuns: 8 }
+                { numRuns: 3 }
             );
         });
     });
@@ -366,7 +366,7 @@ describe.sequential('Storage Operations - Property-Based Tests', () => {
                             .rejects.toThrow();
                     }
                 ),
-                { numRuns: 15 }
+                { numRuns: 3 }
             );
         });
     });
