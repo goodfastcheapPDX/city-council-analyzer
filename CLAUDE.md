@@ -21,6 +21,7 @@ npm run lint             # Run ESLint
 npm run test             # Run all tests
 npm run test:storage     # Run storage tests (sequential)
 npm run test:coverage    # Run with coverage report
+npm run test:api         # Run manual API endpoint tests
 
 # Docker (for integration testing)
 npm run docker:up        # Start test containers

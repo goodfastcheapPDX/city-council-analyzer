@@ -11,6 +11,7 @@
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",
         "test:storage": "vitest run src/lib/storage --max-concurrency=1 --sequence.concurrent=false",
+        "test:api": "./scripts/test-api-manual.sh",
         "database:start": "npx supabase start",
         "database:stop": "npx supabase stop",
         "database:reset": "npx supabase db reset",

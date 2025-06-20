@@ -1,0 +1,10 @@
+{
+  "content": "This is a sample test transcript for manual API validation. It contains basic transcript content that can be used to test the upload functionality.",
+  "metadata": {
+    "title": "Sample Test Transcript",
+    "date": "2025-06-20",
+    "speakers": ["Speaker A", "Speaker B"],
+    "format": "text",
+    "tags": ["sample", "test", "manual"]
+  }
+}
