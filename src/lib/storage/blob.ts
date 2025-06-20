@@ -326,7 +326,7 @@ export class TranscriptStorage {
      * @param offset Optional offset for pagination
      * @returns Promise with array of transcripts (latest version of each)
      */
-    async listTranscripts(limit: number = 0, offset: number = 10): Promise<{
+    async listTranscripts(limit: number = 10, offset: number = 0): Promise<{
         items: TranscriptBlobListItem[];
         total: number;
     }> {

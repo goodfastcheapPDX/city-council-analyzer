@@ -20,8 +20,8 @@ export async function GET(request: NextRequest) {
     try {
         const transcriptStorage = await createStorageForServer();
         const { searchParams } = new URL(request.url);
-        const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!, 10) : undefined;
-        const cursor = Number(searchParams.get('cursor') || undefined);
+        const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!, 10) : 10;
+        const cursor = searchParams.get('cursor') ? parseInt(searchParams.get('cursor')!, 10) : 0;
 
         const result = await transcriptStorage.listTranscripts(limit, cursor);
 

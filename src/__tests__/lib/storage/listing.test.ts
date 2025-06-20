@@ -390,5 +390,55 @@ describe.sequential('TranscriptStorage - Listing and Search Functionality', () =
         expect(emptyResults).toHaveProperty('total');
         expect(emptyResults.items).toEqual([]);
         expect(emptyResults.total).toBe(0);
-    }, TIMEOUT)
+    }, TIMEOUT);
+
+    it('should return items when calling listTranscripts with no parameters (default parameters bug)', async () => {
+        // This test reproduces the exact bug: when listTranscripts() is called without
+        // parameters, it uses default values that cause the range calculation to fail,
+        // returning correct total count but empty items array.
+        // This is the core issue that breaks the GET /api/transcripts endpoint.
+        
+        // Call listTranscripts with no parameters (uses defaults)
+        const result = await storage.listTranscripts();
+        
+        // Verify we get proper structure
+        expect(result).toHaveProperty('items');
+        expect(result).toHaveProperty('total');
+        expect(Array.isArray(result.items)).toBe(true);
+        
+        // The bug: total count is correct but items array is empty
+        expect(result.total).toBeGreaterThanOrEqual(testTranscripts.length);
+        expect(result.items.length).toBeGreaterThan(0); // This will FAIL with current bug
+        
+        // Verify that the items match our test data when bug is fixed
+        if (result.items.length > 0) {
+            const item = result.items[0];
+            expect(item).toHaveProperty('url');
+            expect(item).toHaveProperty('blobKey');
+            expect(item).toHaveProperty('metadata');
+            expect(item.metadata).toHaveProperty('sourceId');
+            expect(item.metadata).toHaveProperty('title');
+        }
+    }, TIMEOUT);
+
+    it('should return same data with explicit default parameters as with no parameters', async () => {
+        // This test helps isolate the issue by comparing explicit vs implicit defaults
+        // It verifies that once we fix the defaults, both approaches should work identically
+        
+        // Call with no parameters (uses defaults)
+        const resultWithDefaults = await storage.listTranscripts();
+        
+        // Call with explicit parameters that should match corrected defaults
+        const resultWithExplicit = await storage.listTranscripts(10, 0);
+        
+        // Both should return the same data structure and content
+        expect(resultWithDefaults.total).toBe(resultWithExplicit.total);
+        expect(resultWithDefaults.items.length).toBe(resultWithExplicit.items.length);
+        
+        // If we have items, they should be the same
+        if (resultWithExplicit.items.length > 0) {
+            expect(resultWithDefaults.items[0].metadata.sourceId)
+                .toBe(resultWithExplicit.items[0].metadata.sourceId);
+        }
+    }, TIMEOUT);
 });
