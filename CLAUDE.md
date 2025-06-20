@@ -56,6 +56,9 @@ claude/
 
 **For TDD guidelines**: See @claude/rules/test-driven-development.md
 
+### Development Workflow
+- I keep the dev server running in a separate tab for efficiency.
+
 ### Testing Strategy
 - **Property-based testing** with Fast-Check for edge cases
 - **Realistic environments** over mocking (SQLite, Docker)

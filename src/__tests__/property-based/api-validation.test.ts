@@ -1,21 +1,20 @@
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import * as fc from 'fast-check';
-import { GET, DELETE, PATCH } from '@/app/api/transcripts/[sourceId]/route';
+import { createTranscriptSourceIdHandlers } from '@/app/api/transcripts/[sourceId]/handlers';
 import { TestTranscriptStorage } from '@/__tests__/test-utils/TestTranscriptStorage';
-import * as factories from '@/lib/storage/factories';
 
 describe('Property-Based API Validation Tests', () => {
     let testStorage: TestTranscriptStorage;
+    let handlers: ReturnType<typeof createTranscriptSourceIdHandlers>;
 
     beforeEach(() => {
         testStorage = new TestTranscriptStorage();
-        vi.spyOn(factories, 'createStorageForServer').mockResolvedValue(testStorage as any);
+        handlers = createTranscriptSourceIdHandlers();
     });
 
     afterEach(() => {
         testStorage.clearAll();
-        vi.restoreAllMocks();
     });
 
     describe('GET /api/transcripts/[sourceId] - Property-Based Tests', () => {
@@ -35,9 +34,9 @@ describe('Property-Based API Validation Tests', () => {
                         });
 
                         const request = new NextRequest(`http://localhost/api/transcripts/${encodeURIComponent(sourceId)}`);
-                        const response = await GET(request, {
+                        const response = await handlers.GET(request, {
                             params: Promise.resolve({ sourceId })
-                        });
+                        }, testStorage as any);
 
                         // Should either return 200 (found) or 404 (not found), never crash
                         expect([200, 404]).toContain(response.status);
@@ -70,9 +69,9 @@ describe('Property-Based API Validation Tests', () => {
                     fc.integer(),
                     async (version) => {
                         const request = new NextRequest(`http://localhost/api/transcripts/${sourceId}?version=${version}`);
-                        const response = await GET(request, {
+                        const response = await handlers.GET(request, {
                             params: Promise.resolve({ sourceId })
-                        });
+                        }, testStorage as any);
 
                         // Should always return a valid HTTP status
                         expect(response.status).toBeGreaterThanOrEqual(200);
@@ -106,9 +105,9 @@ describe('Property-Based API Validation Tests', () => {
                         const request = new NextRequest(
                             `http://localhost/api/transcripts/${sourceId}?${encodeURIComponent(paramName)}=${encodeURIComponent(paramValue)}`
                         );
-                        const response = await GET(request, {
+                        const response = await handlers.GET(request, {
                             params: Promise.resolve({ sourceId })
-                        });
+                        }, testStorage as any);
 
                         // Should never crash, always return valid response
                         expect(response.status).toBeGreaterThanOrEqual(200);
@@ -140,9 +139,9 @@ describe('Property-Based API Validation Tests', () => {
                         });
 
                         const request = new NextRequest(`http://localhost/api/transcripts/${encodeURIComponent(sourceId)}`);
-                        const response = await DELETE(request, {
+                        const response = await handlers.DELETE(request, {
                             params: Promise.resolve({ sourceId })
-                        });
+                        }, testStorage as any);
 
                         // Should return either success or error, never crash
                         expect([200, 404, 500]).toContain(response.status);
@@ -178,9 +177,9 @@ describe('Property-Based API Validation Tests', () => {
                     fc.integer(),
                     async (version) => {
                         const request = new NextRequest(`http://localhost/api/transcripts/${sourceId}?version=${version}`);
-                        const response = await DELETE(request, {
+                        const response = await handlers.DELETE(request, {
                             params: Promise.resolve({ sourceId })
-                        });
+                        }, testStorage as any);
 
                         // Should always return valid response
                         expect(response.status).toBeGreaterThanOrEqual(200);
@@ -216,9 +215,9 @@ describe('Property-Based API Validation Tests', () => {
                             headers: { 'Content-Type': 'application/json' }
                         });
 
-                        const response = await PATCH(request, {
+                        const response = await handlers.PATCH(request, {
                             params: Promise.resolve({ sourceId })
-                        });
+                        }, testStorage as any);
 
                         // Should return either 200 (success), 400 (bad request), or 500 (error)
                         expect([200, 400, 500]).toContain(response.status);

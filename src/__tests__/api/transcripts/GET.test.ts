@@ -1,21 +1,21 @@
 import { NextRequest } from 'next/server';
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
-import { GET } from '@/app/api/transcripts/[sourceId]/route';
+import { describe, test, expect, beforeEach, afterEach } from 'vitest';
+import { createTranscriptSourceIdHandlers } from '@/app/api/transcripts/[sourceId]/handlers';
 import { TestTranscriptStorage } from '@/__tests__/test-utils/TestTranscriptStorage'
-import * as factories from '@/lib/storage/factories';
 import dotenv from 'dotenv';
 
 describe('GET /api/transcripts/[sourceId]', () => {
     dotenv.config({ path: '.env.test' });
 
     let testStorage: TestTranscriptStorage;
+    let handlers: ReturnType<typeof createTranscriptSourceIdHandlers>;
 
     beforeEach(() => {
         // Create a new test storage instance for each test
         testStorage = new TestTranscriptStorage();
-
-        // Mock the factory to return our test storage
-        vi.spyOn(factories, 'createStorageForServer').mockResolvedValue(testStorage as any);
+        
+        // Create handlers instance
+        handlers = createTranscriptSourceIdHandlers();
 
         // Set up test data
         testStorage.addTranscript('transcript1', 1, {
@@ -40,9 +40,6 @@ describe('GET /api/transcripts/[sourceId]', () => {
     afterEach(() => {
         // Clean up test data
         testStorage.clearAll();
-
-        // Restore all mocks
-        vi.restoreAllMocks();
     });
 
     test('successfully retrieves a transcript with default version', async () => {
@@ -52,9 +49,9 @@ describe('GET /api/transcripts/[sourceId]', () => {
         // core value proposition of transcript storage and analysis.
         // Create request with sourceId
         const request = new NextRequest('http://localhost/api/transcripts/transcript1');
-        const response = await GET(request, {
+        const response = await handlers.GET(request, {
             params: Promise.resolve({ sourceId: 'transcript1' })
-        });
+        }, testStorage as any);
 
         expect(response.status).toBe(200);
 
@@ -70,9 +67,9 @@ describe('GET /api/transcripts/[sourceId]', () => {
         // This capability is crucial for comparing changes, reverting to previous
         // versions, and maintaining transcript evolution tracking.
         const request = new NextRequest('http://localhost/api/transcripts/transcript1?version=1');
-        const response = await GET(request, {
+        const response = await handlers.GET(request, {
             params: Promise.resolve({ sourceId: 'transcript1' })
-        });
+        }, testStorage as any);
 
         expect(response.status).toBe(200);
 
@@ -84,9 +81,9 @@ describe('GET /api/transcripts/[sourceId]', () => {
 
     test('lists all versions when requested', async () => {
         const request = new NextRequest('http://localhost/api/transcripts/transcript1?versions=true');
-        const response = await GET(request, {
+        const response = await handlers.GET(request, {
             params: Promise.resolve({ sourceId: 'transcript1' })
-        });
+        }, testStorage as any);
 
         expect(response.status).toBe(200);
 
@@ -112,9 +109,9 @@ describe('GET /api/transcripts/[sourceId]', () => {
         // for missing transcripts, helping users understand when they're requesting
         // invalid resources and preventing confusion about transcript availability.
         const request = new NextRequest('http://localhost/api/transcripts/nonexistent');
-        const response = await GET(request, {
+        const response = await handlers.GET(request, {
             params: Promise.resolve({ sourceId: 'nonexistent' })
-        });
+        }, testStorage as any);
 
         expect(response.status).toBe(404);
 
@@ -125,9 +122,9 @@ describe('GET /api/transcripts/[sourceId]', () => {
 
     test('should return 404 error when version parameter contains non-numeric value', async () => {
         const request = new NextRequest('http://localhost/api/transcripts/transcript1?version=invalid');
-        const response = await GET(request, {
+        const response = await handlers.GET(request, {
             params: Promise.resolve({ sourceId: 'transcript1' })
-        });
+        }, testStorage as any);
 
         // The route will try to parse 'invalid' as a number using parseInt, which returns NaN
         // We expect a 404 since that version won't exist
@@ -148,13 +145,10 @@ describe('GET /api/transcripts/[sourceId]', () => {
             listVersions: async () => { throw new Error('Unexpected storage error'); }
         };
 
-        // Mock the factory to return our error-throwing storage
-        vi.spyOn(factories, 'createStorageForServer').mockResolvedValue(errorStorage as any);
-
         const request = new NextRequest('http://localhost/api/transcripts/transcript1');
-        const response = await GET(request, {
+        const response = await handlers.GET(request, {
             params: Promise.resolve({ sourceId: 'transcript1' })
-        });
+        }, errorStorage as any);
 
         expect(response.status).toBe(404);
 
@@ -173,9 +167,9 @@ describe('GET /api/transcripts/[sourceId]', () => {
         });
 
         const request = new NextRequest('http://localhost/api/transcripts/transcript%2Fwith%3Fspecial%26chars');
-        const response = await GET(request, {
+        const response = await handlers.GET(request, {
             params: Promise.resolve({ sourceId: 'transcript/with?special&chars' })
-        });
+        }, testStorage as any);
 
         expect(response.status).toBe(200);
 
@@ -193,9 +187,9 @@ describe('GET /api/transcripts/[sourceId]', () => {
         });
 
         const request = new NextRequest(`http://localhost/api/transcripts/transcript1?version=${largeVersion}`);
-        const response = await GET(request, {
+        const response = await handlers.GET(request, {
             params: Promise.resolve({ sourceId: 'transcript1' })
-        });
+        }, testStorage as any);
 
         expect(response.status).toBe(200);
 

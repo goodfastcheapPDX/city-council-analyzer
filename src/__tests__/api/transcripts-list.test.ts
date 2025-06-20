@@ -1,8 +1,8 @@
 import { NextRequest } from 'next/server';
-import { describe, test, expect, beforeAll, afterAll, vi } from 'vitest';
+import { describe, test, expect, beforeAll, afterAll } from 'vitest';
 import { createStorageForTest } from '@/lib/storage/factories';
 import { TranscriptStorage } from '@/lib/storage/blob';
-import * as factories from '@/lib/storage/factories';
+import { createTranscriptHandlers } from '@/app/api/transcripts/handlers';
 import dotenv from 'dotenv';
 
 // Test timeout for network operations
@@ -12,11 +12,15 @@ describe('GET /api/transcripts - Listing Endpoint Integration', () => {
     dotenv.config({ path: '.env.test' });
 
     let storage: TranscriptStorage;
+    let handlers: ReturnType<typeof createTranscriptHandlers>;
     const testSourceIds: string[] = [];
 
     beforeAll(async () => {
         // Create real storage instance for integration testing
         storage = createStorageForTest();
+        
+        // Create handlers instance
+        handlers = createTranscriptHandlers();
         
         // Initialize database
         await storage.initializeDatabase();
@@ -69,19 +73,12 @@ describe('GET /api/transcripts - Listing Endpoint Integration', () => {
         }
     }, TIMEOUT);
 
-    test('should return transcripts with items array populated when transcripts exist - API Route Test', async () => {
-        // This test reproduces the exact bug reported: GET /api/transcripts returns
-        // {"items":[],"total":2} where total is correct but items array is empty.
-        // This breaks the frontend display as users cannot see their uploaded transcripts.
-        
-        // Mock the storage factory to return our test storage
-        vi.spyOn(factories, 'createStorageForServer').mockResolvedValue(storage);
-        
-        // Import the route after mocking
-        const { GET } = await import('@/app/api/transcripts/route');
+    test('should return transcripts with items array populated when transcripts exist - Handler Test', async () => {
+        // This test verifies that the GET handler returns proper data structure
+        // when transcripts exist, ensuring users can see their uploaded transcripts.
         
         const request = new NextRequest('http://localhost:3000/api/transcripts');
-        const response = await GET(request);
+        const response = await handlers.GET(request, storage);
 
         expect(response.status).toBe(200);
 
@@ -92,10 +89,9 @@ describe('GET /api/transcripts - Listing Endpoint Integration', () => {
         expect(data).toHaveProperty('total');
         expect(Array.isArray(data.items)).toBe(true);
         
-        // The bug: total is correct but items is empty
-        // This should pass once we fix the issue
+        // Verify we have the expected data
         expect(data.total).toBeGreaterThanOrEqual(2);
-        expect(data.items.length).toBeGreaterThan(0); // This will FAIL with current bug
+        expect(data.items.length).toBeGreaterThan(0);
         
         // Verify items have expected structure
         if (data.items.length > 0) {
@@ -108,23 +104,14 @@ describe('GET /api/transcripts - Listing Endpoint Integration', () => {
             expect(item.metadata).toHaveProperty('date');
             expect(item.metadata).toHaveProperty('speakers');
         }
-        
-        // Restore mocks
-        vi.restoreAllMocks();
     }, TIMEOUT);
 
-    test('should handle pagination parameters correctly - API Route Test', async () => {
+    test('should handle pagination parameters correctly - Handler Test', async () => {
         // This test verifies that when explicit pagination parameters are provided,
-        // the system works correctly. This helps isolate the bug to default parameters.
-        
-        // Mock the storage factory to return our test storage
-        vi.spyOn(factories, 'createStorageForServer').mockResolvedValue(storage);
-        
-        // Import the route after mocking
-        const { GET } = await import('@/app/api/transcripts/route');
+        // the handler works correctly with proper parameter handling.
         
         const request = new NextRequest('http://localhost:3000/api/transcripts?limit=5&cursor=0');
-        const response = await GET(request);
+        const response = await handlers.GET(request, storage);
 
         expect(response.status).toBe(200);
 
@@ -133,63 +120,42 @@ describe('GET /api/transcripts - Listing Endpoint Integration', () => {
         expect(data).toHaveProperty('total');
         expect(data.items.length).toBeGreaterThan(0);
         expect(data.items.length).toBeLessThanOrEqual(5);
-        
-        // Restore mocks
-        vi.restoreAllMocks();
     }, TIMEOUT);
 
     test('should return empty result when no transcripts exist in isolated environment', async () => {
         // This test verifies that empty results are handled correctly when legitimately empty
-        // We'll mock the storage to return empty results to test this case
+        // We'll use a mock storage to return empty results to test this case
         
         const mockStorage = {
-            listTranscripts: vi.fn().mockResolvedValue({ items: [], total: 0 })
-        };
-
-        // Mock the factory temporarily
-        const originalCreateStorage = vi.fn();
-        vi.doMock('@/lib/storage/factories', () => ({
-            createStorageForServer: () => mockStorage
-        }));
+            listTranscripts: async () => ({ items: [], total: 0 })
+        } as TranscriptStorage;
 
         const request = new NextRequest('http://localhost:3000/api/transcripts');
-        
-        // Import the route after mocking
-        const { GET: MockedGET } = await import('@/app/api/transcripts/route');
-        const response = await MockedGET(request);
+        const response = await handlers.GET(request, mockStorage);
 
         expect(response.status).toBe(200);
 
         const data = await response.json();
         expect(data.items).toEqual([]);
         expect(data.total).toBe(0);
-
-        // Clean up mock
-        vi.doUnmock('@/lib/storage/factories');
     }, TIMEOUT);
 
     test('should handle storage errors gracefully', async () => {
-        // This test ensures that storage layer failures don't crash the API endpoint
+        // This test ensures that storage layer failures don't crash the handler
         
         const mockStorage = {
-            listTranscripts: vi.fn().mockRejectedValue(new Error('Database connection failed'))
-        };
-
-        vi.doMock('@/lib/storage/factories', () => ({
-            createStorageForServer: () => mockStorage
-        }));
+            listTranscripts: async () => {
+                throw new Error('Database connection failed');
+            }
+        } as TranscriptStorage;
 
         const request = new NextRequest('http://localhost:3000/api/transcripts');
-        
-        const { GET: MockedGET } = await import('@/app/api/transcripts/route');
-        const response = await MockedGET(request);
+        const response = await handlers.GET(request, mockStorage);
 
         expect(response.status).toBe(500);
 
         const data = await response.json();
         expect(data).toHaveProperty('error');
         expect(data.error).toBe('Failed to list transcripts');
-
-        vi.doUnmock('@/lib/storage/factories');
     }, TIMEOUT);
 });
