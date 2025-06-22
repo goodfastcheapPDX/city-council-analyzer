@@ -5,6 +5,11 @@ import {
 } from '@vercel/blob';
 import { type SupabaseClient } from '@supabase/supabase-js';
 import { nanoid } from 'nanoid';
+import { 
+    calculatePaginationBounds, 
+    validatePaginationParams, 
+    normalizePaginationDefaults 
+} from '@/lib/utils/pagination';
 
 
 /**
@@ -326,17 +331,21 @@ export class TranscriptStorage {
      * @param offset Optional offset for pagination
      * @returns Promise with array of transcripts (latest version of each)
      */
-    async listTranscripts(limit: number = 10, offset: number = 0): Promise<{
+    async listTranscripts(limit?: number, offset?: number): Promise<{
         items: TranscriptBlobListItem[];
         total: number;
     }> {
-        // The starting index from which to limit the result
-        const from = offset
-
-        /* The last index to which to limit the result, inclusive.
-        If limit = 10 and offset = 0, to = 9.
-        In this example, .range() will return the first through the tenth rows */
-        const to = offset + (Math.max(limit - 1, 0))
+        // Normalize pagination parameters with proper defaults
+        const normalizedParams = normalizePaginationDefaults(limit, offset);
+        
+        // Validate parameters
+        const validation = validatePaginationParams(normalizedParams.limit, normalizedParams.offset);
+        if (!validation.isValid) {
+            throw new Error(`Invalid pagination parameters: ${validation.errors.join(', ')}`);
+        }
+        
+        // Calculate Supabase range bounds
+        const { from, to } = calculatePaginationBounds(normalizedParams.limit, normalizedParams.offset);
 
         // This query gets the latest version of each transcript
         const { data, error, count } = await this.supabase
@@ -422,9 +431,13 @@ export class TranscriptStorage {
             supabaseQuery = supabaseQuery.eq('processing_status', query.status);
         }
 
+        // Apply pagination using extracted utilities
+        const normalizedParams = normalizePaginationDefaults(query.limit, query.offset);
+        const { from, to } = calculatePaginationBounds(normalizedParams.limit, normalizedParams.offset);
+        
         supabaseQuery = supabaseQuery
             .order('uploaded_at', { ascending: false })
-            .range(query.offset || 0, (query.offset || 0) + (query.limit || 9));
+            .range(from, to);
 
         const { data, error, count } = await supabaseQuery;
 

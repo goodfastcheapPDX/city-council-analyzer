@@ -1,0 +1,79 @@
+# Property-Based Testing Performance Refactor - Implementation Plan
+
+## Project Context
+
+I'm now familiar with the **[EPIC] Property-Based Testing Performance and Coverage Refactor #99** and the current codebase state:
+
+### Current Situation
+- **Epic Goal**: Improve test performance from 10+ minutes to <2 minutes while increasing parameter coverage from 15 test cases to 300+ test cases
+- **Epic Structure**: 8 sequential issues (#91-98) organized in phases
+- **Current Tests**: Property-based tests with Fast-Check exist but are slow due to database dependencies
+- **Key Problem**: Pure logic is mixed with database operations, making fast testing impossible
+
+### Current Test Architecture Issues
+- **Storage Tests**: Complex setup with Supabase, network timeouts (15s), sequential execution
+- **Property-Based Tests**: Only 30-50 runs due to performance constraints
+- **Mixed Concerns**: Pagination, validation, and search logic embedded in storage class
+
+## Implementation Plan
+
+### Phase 1: Extract Pure Logic (Issues #91-93)
+
+**Starting with Issue #91 - Extract pagination logic into pure utility functions**
+
+#### Step 1: Create Pure Pagination Utilities
+- Create `src/lib/utils/pagination.ts` with pure functions:
+  - `calculatePaginationBounds(limit, offset)` → `{ from, to }`
+  - `validatePaginationParams(limit?, offset?)` → `{ isValid, errors }`
+  - `normalizePaginationDefaults(limit?, offset?)` → `{ limit, offset }`
+
+#### Step 2: Write Fast Property-Based Tests
+- Create `src/__tests__/lib/utils/pagination.test.ts`
+- Use Fast-Check with 100+ runs for comprehensive parameter coverage
+- Test mathematical invariants, edge cases, error conditions
+- Target <30 seconds execution time
+
+#### Step 3: Verify Pagination Bug Remains Fixed
+- **Note**: User confirmed that recent commit 10f9272 already fixed the pagination bug
+- Ensure our refactoring preserves this fix
+- Extract the corrected logic from lines 329-339 in `blob.ts` into pure functions
+- Maintain the proper default parameters (limit=10, offset=0)
+
+### Phase 2: Subsequent Issues (After #91)
+
+**Issue #92**: Extract search parameter validation  
+**Issue #93**: Extract metadata validation  
+**Issue #94**: Create comprehensive property-based test suite for pure functions  
+**Issue #95**: Create deterministic edge case tests  
+**Issue #96**: Optimize remaining database tests  
+**Issue #97-98**: Update implementation to use extracted utilities
+
+### Expected Outcomes
+
+#### Performance Improvements
+- **Pure Logic Tests**: <30 seconds (vs current minutes)
+- **Property Coverage**: 300+ test cases (vs current 15)
+- **Fast Feedback**: Immediate validation during development
+- **Total Test Time**: <2 minutes (vs current 10+ minutes)
+
+#### Quality Improvements
+- **Separation of Concerns**: Pure logic isolated from I/O
+- **Better Coverage**: Mathematical edge cases thoroughly tested
+- **Maintainability**: Utilities reusable across components
+- **Reliability**: Deterministic tests prevent regression
+- **Bug Prevention**: Preserve existing fix while improving architecture
+
+### Implementation Approach
+1. **TDD Method**: Write failing tests first, implement minimal code to pass
+2. **Extract from Existing**: Pull corrected logic from current `TranscriptStorage` class
+3. **Preserve Behavior**: Ensure no functional regressions, especially pagination fix
+4. **Document Rationale**: Each test explains business importance
+
+## Action Items
+
+1. ✅ Create file `issue-99-todo-plan.txt` with this complete plan
+2. Start implementing Issue #91 with TDD approach
+3. Extract pagination utilities while preserving existing bug fix
+4. Write comprehensive property-based tests for pure functions
+
+This plan will start with the foundation (pagination) and systematically extract pure logic to achieve the epic's performance and coverage goals while maintaining all existing fixes.
