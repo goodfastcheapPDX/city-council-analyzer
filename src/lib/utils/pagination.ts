@@ -73,7 +73,7 @@ export function validatePaginationParams(
         errors.push('Offset must be non-negative');
     }
     
-    return {
+    return {        
         isValid: errors.length === 0,
         errors
     };

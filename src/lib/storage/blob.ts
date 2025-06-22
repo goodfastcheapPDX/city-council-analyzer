@@ -10,6 +10,11 @@ import {
     validatePaginationParams, 
     normalizePaginationDefaults 
 } from '@/lib/utils/pagination';
+import {
+    validateSearchParams,
+    buildSearchFilters,
+    type SearchQuery
+} from '@/lib/utils/search-validation';
 
 
 /**
@@ -390,45 +395,47 @@ export class TranscriptStorage {
      * @param query Search parameters
      * @returns Promise with matching transcripts
      */
-    async searchTranscripts(query: {
-        title?: string;
-        speaker?: string;
-        tag?: string;
-        dateFrom?: string;
-        dateTo?: string;
-        status?: TranscriptMetadata['processingStatus'];
-        limit?: number;
-        offset?: number;
-    }): Promise<{
+    async searchTranscripts(query: SearchQuery): Promise<{
         items: TranscriptBlobListItem[];
         total: number;
     }> {
+        // Validate search parameters
+        const validation = validateSearchParams(query);
+        if (!validation.isValid) {
+            throw new Error(`Invalid search parameters: ${validation.errors.join(', ')}`);
+        }
+        
+        // Build filters from validated query
+        const filters = buildSearchFilters(query);
+        
+        // Start with base query
         let supabaseQuery = this.supabase
             .from('transcript_metadata_latest_view')
             .select('*', { count: 'exact' });
 
-        if (query.title) {
-            supabaseQuery = supabaseQuery.ilike('title', `%${query.title}%`);
+        // Apply filters based on extracted utilities
+        if (filters.title) {
+            supabaseQuery = supabaseQuery.ilike('title', filters.title.value as string);
         }
 
-        if (query.speaker) {
-            supabaseQuery = supabaseQuery.contains('speakers', [query.speaker]);
+        if (filters.speaker) {
+            supabaseQuery = supabaseQuery.contains('speakers', filters.speaker.value as string[]);
         }
 
-        if (query.tag) {
-            supabaseQuery = supabaseQuery.contains('tags', [query.tag]);
+        if (filters.tag) {
+            supabaseQuery = supabaseQuery.contains('tags', filters.tag.value as string[]);
         }
 
-        if (query.dateFrom) {
-            supabaseQuery = supabaseQuery.gte('date', query.dateFrom);
+        if (filters.dateFrom) {
+            supabaseQuery = supabaseQuery.gte('date', filters.dateFrom.value as string);
         }
 
-        if (query.dateTo) {
-            supabaseQuery = supabaseQuery.lte('date', query.dateTo);
+        if (filters.dateTo) {
+            supabaseQuery = supabaseQuery.lte('date', filters.dateTo.value as string);
         }
 
-        if (query.status) {
-            supabaseQuery = supabaseQuery.eq('processing_status', query.status);
+        if (filters.status) {
+            supabaseQuery = supabaseQuery.eq('processing_status', filters.status.value as string);
         }
 
         // Apply pagination using extracted utilities
