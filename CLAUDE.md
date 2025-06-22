@@ -66,7 +66,11 @@ claude/
 - **Sequential storage tests** (`--max-concurrency=1`)
 - **80% coverage** minimum for all components
 
-**For detailed testing guidance**: See @claude/rules/testing-strategy.md`
+**For detailed testing guidance**: See @claude/rules/testing-strategy.md
+
+### Property-Based Testing Guidance
+- **Remember to reference the @claude/rules/property-based-testing-guide.md rule when planning tests and engaging in TDD**
+- **Remember to check the @claude/rules/visual-testing-guide.md when planning tests or engaging in TDD**
 
 ### Issue Management
 - **Detailed specifications** required for all GitHub issues
@@ -79,6 +83,7 @@ claude/
 - **Conventional commits** with detailed explanations
 - **Claude Code attribution** footer required
 - **No commits without explicit user request**
+- **When making a commit reflecting task completion, update the LAST_TIME_NEXT_TIME.md file to record that**
 
 **For commit guidelines**: See @claude/rules/git-commit-style.md
 
@@ -178,3 +183,7 @@ This repository includes automated guidance in the @claude directory:
 This approach ensures no time is wasted figuring out where development left off and maintains focus on planned priorities across multi-system integrations (Next.js, Vercel Blob, Supabase).
 
 This document provides essential information for productive development. For detailed specifications, consult the architecture plan and implementation roadmap in the `claude/` directory.
+
+## File Management Guidelines
+
+- We should create txt files using the naming convention {github-issue-#}-short-description.txt in the claude/todos directory to track our work. We should update this file to reflect our progress as we go.
