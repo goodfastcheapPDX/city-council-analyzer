@@ -22,6 +22,7 @@ npm run test             # Run all tests
 npm run test:storage     # Run storage tests (sequential)
 npm run test:coverage    # Run with coverage report
 npm run test:api         # Run manual API endpoint tests
+npm run typecheck        # Type check all TypeScript files
 
 # Docker (for integration testing)
 npm run docker:up        # Start test containers
@@ -81,6 +82,7 @@ claude/
 
 ### Commit Standards
 - **Conventional commits** with detailed explanations
+- **Run typecheck before commits**: Always run `npm run typecheck` before committing
 - **Claude Code attribution** footer required
 - **No commits without explicit user request**
 - **When making a commit reflecting task completion, update the LAST_TIME_NEXT_TIME.md file to record that**
