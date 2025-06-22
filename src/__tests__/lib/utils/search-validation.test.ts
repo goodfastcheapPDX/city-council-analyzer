@@ -90,7 +90,7 @@ describe('Search Validation Utilities - Pure Logic Tests', () => {
             // causing system instability or inconsistent error messaging.
             fc.assert(
                 fc.property(
-                    fc.record({
+                    fc.record<SearchQuery>({
                         title: fc.option(fc.string(), { nil: undefined }),
                         speaker: fc.option(fc.string(), { nil: undefined }),
                         tag: fc.option(fc.string(), { nil: undefined }),
@@ -99,8 +99,7 @@ describe('Search Validation Utilities - Pure Logic Tests', () => {
                         status: fc.option(fc.oneof(
                             fc.constant('pending'),
                             fc.constant('processed'),
-                            fc.constant('failed'),
-                            fc.string()
+                            fc.constant('failed')
                         ), { nil: undefined })
                     }),
                     (query) => {

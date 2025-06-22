@@ -128,7 +128,7 @@ describe('GET /api/transcripts - Listing Endpoint Integration', () => {
         
         const mockStorage = {
             listTranscripts: async () => ({ items: [], total: 0 })
-        } as TranscriptStorage;
+        } as Partial<TranscriptStorage> as TranscriptStorage;
 
         const request = new NextRequest('http://localhost:3000/api/transcripts');
         const response = await handlers.GET(request, mockStorage);
@@ -147,7 +147,7 @@ describe('GET /api/transcripts - Listing Endpoint Integration', () => {
             listTranscripts: async () => {
                 throw new Error('Database connection failed');
             }
-        } as TranscriptStorage;
+        } as Partial<TranscriptStorage> as TranscriptStorage;
 
         const request = new NextRequest('http://localhost:3000/api/transcripts');
         const response = await handlers.GET(request, mockStorage);
