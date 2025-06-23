@@ -1,6 +1,6 @@
 # Last Time / Next Time
 
-## Last Time (2025-06-20)
+## Last Time (2025-06-23)
 
 ### What We Accomplished  
 ✅ **Critical Bug Fix - GET /api/transcripts Listing Issue**
@@ -23,11 +23,19 @@
 - Refactored all test files to import handlers instead of routes
 - **Result**: 8/9 test files now pass cleanly, no more cookies() errors!
 
+✅ **Property-Based Test Failure Resolution - NEW**
+- **RESOLVED Vercel Blob pathname double slash issue** in property-based tests
+- Fixed blob key generation to sanitize problematic sourceId characters
+- Added path sanitization: forward slashes → hyphens, spaces → underscores
+- Property-based tests now pass consistently with all generated edge cases
+- Storage system can now handle real-world transcript IDs with special characters
+
 ### Current Status
 - **Backend APIs**: ✅ Fully working (upload AND listing confirmed)
 - **Sample Data**: ✅ Ready for testing
 - **Data Listing**: ✅ FIXED - GET endpoint now returns items with data
 - **Testing Infrastructure**: ✅ FIXED - No more cookies() errors, tests run cleanly
+- **Property-Based Tests**: ✅ FIXED - All storage property tests pass consistently
 - **Frontend**: ❌ Still needs connection to working backend APIs
 
 ### Key Files Modified/Added
@@ -45,6 +53,11 @@
 - `src/__tests__/api/transcripts-list.test.ts` - Updated to import handlers instead of routes
 - `src/__tests__/api/transcripts/GET.test.ts` - Updated to import handlers instead of routes
 - `src/__tests__/property-based/api-validation.test.ts` - Updated to import handlers instead of routes
+
+**Property-Based Test Fix:**
+- `src/lib/storage/blob.ts` - Added sourceId sanitization in `generateBlobKey` method
+- Fixed blob path generation to prevent double slashes and URL-unsafe characters
+- Property-based tests in `src/__tests__/property-based/storage-properties.test.ts` now pass consistently
 
 ## Next Time
 
@@ -103,6 +116,9 @@ npm run dev
 5. **Multiple Fix Points**: Both storage layer defaults AND API parameter handling needed fixes
 6. **Testing Architecture**: Dependency injection pattern eliminates context-dependent failures in tests
 7. **Clean Abstractions**: Separating business logic from Next.js adapters improves testability and maintainability
+8. **Property-Based Testing Value**: Fast-Check discovered edge cases we didn't anticipate (sourceIds with slashes/spaces)
+9. **Input Sanitization Critical**: External APIs (Vercel Blob) have strict requirements that need input validation
+10. **Path Safety**: URL path construction requires sanitization to prevent double slashes and invalid characters
 
 ### Notes
 - ✅ Backend storage layer (Vercel Blob + Supabase) fully confirmed working  
@@ -111,7 +127,9 @@ npm run dev
 - ✅ API schema validation working correctly
 - ✅ Testing infrastructure completely resolved - no more cookies() errors
 - ✅ Clean dependency injection architecture implemented
+- ✅ Property-based tests pass reliably with all edge cases handled
+- ✅ Storage system robust against problematic sourceId characters
 - 🎯 Next focus: Connect frontend components to working backend APIs
 
 ---
-*Last updated: 2025-06-20*
+*Last updated: 2025-06-23*

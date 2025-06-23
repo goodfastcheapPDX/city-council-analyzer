@@ -10,7 +10,7 @@
         "test": "vitest run",
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",
-        "test:storage": "vitest run src/lib/storage --max-concurrency=1 --sequence.concurrent=false",
+        "test:storage": "vitest run src/__tests__/lib/storage --max-concurrency=1 --sequence.concurrent=false",
         "test:api": "./scripts/test-api-manual.sh",
         "typecheck": "npx tsc --noEmit --project tsconfig.json",
         "database:start": "npx supabase start",

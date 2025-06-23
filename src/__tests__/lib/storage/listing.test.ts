@@ -70,6 +70,38 @@ describe.sequential('TranscriptStorage - Listing and Search Functionality', () =
         // Initialize database
         await storage.initializeDatabase();
 
+        // Clean up any existing test data first
+        for (const transcript of testTranscripts) {
+            try {
+                await storage.deleteAllVersions(transcript.sourceId);
+            } catch (error) {
+                // Ignore cleanup errors - records may not exist
+            }
+        }
+
+        // Also clean up any leftover test data from previous runs
+        // Get all existing transcripts and delete any that look like test data
+        const existingRecords = await storage.listTranscripts(100, 0);
+        for (const record of existingRecords.items) {
+            const sourceId = record.metadata.sourceId;
+            // Delete records that look like test data
+            if (sourceId.includes('list-test-') || 
+                sourceId.includes('transcript_') ||
+                sourceId.length < 10 || // Short random IDs
+                sourceId.includes('=') || // Base64-like IDs
+                (sourceId.includes('-') && sourceId.length > 30) || // UUID-like
+                record.metadata.title.includes('Test') ||
+                record.metadata.title.includes('test') ||
+                record.metadata.title.length < 5 || // Very short titles like ':a'
+                record.metadata.title.includes(':')) { // Strange titles with colons
+                try {
+                    await storage.deleteAllVersions(sourceId);
+                } catch (error) {
+                    console.warn(`Failed to cleanup ${sourceId}:`, error);
+                }
+            }
+        }
+
         // Upload all test transcripts
         for (const transcript of testTranscripts) {
             const metadata: Omit<TranscriptMetadata, 'uploadedAt' | 'version'> = {
