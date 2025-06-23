@@ -1,0 +1,362 @@
+# Date Standardization Implementation Plan
+
+## Project Overview
+Comprehensive standardization of date handling across the entire application stack using Luxon as the backing library, eliminating all direct Date object usage and ensuring consistent timezone-aware date management.
+
+## Current State Analysis
+
+### ✅ Database Schema (Excellent - No Changes Needed)
+- Using PostgreSQL `TIMESTAMPTZ` (timestamp with time zone) - industry standard
+- Database returns `2023-04-15T00:00:00+00:00` format (PostgreSQL convention)
+- Automatic timezone handling by PostgreSQL
+- Schema already aligns with ecosystem best practices
+
+### ✅ Dependencies
+- **Luxon v3.5.0** already installed (superior to date-fns-tz)
+- Modern API, better TypeScript support, immutable DateTime objects
+- No additional dependencies needed
+
+### ❌ Current Problems
+- `dateUtils` in `src/lib/config.ts` uses native Date objects instead of Luxon
+- **11+ files** using direct `new Date()` calls instead of centralized utilities
+- Manual ISO string generation and date manipulation
+- Inconsistent date formats across tests and source code
+- Test files using `Date.now()` for timestamp generation without standardization
+
+### 🔍 Violation Areas Found
+1. **Tests**: Using `new Date().toISOString()` instead of `dateUtils.now()`
+2. **Storage Layer**: Direct Date object usage in blob operations
+3. **API Handlers**: Manual date formatting and timestamp creation
+4. **Property-based Tests**: Not using standardized date generation
+5. **Test Utilities**: Creating dates without central utilities
+
+## Technical Architecture Decisions
+
+### ✅ Keep Current Database Schema
+**Rationale**: PostgreSQL `TIMESTAMPTZ` is optimal
+- Industry standard for timezone-aware timestamps
+- Automatic timezone conversion and storage
+- `+00:00` format is PostgreSQL convention (not a bug)
+- No migration needed - current schema is architecturally sound
+
+### ✅ Use Luxon (Already Installed)
+**Rationale**: Superior to date-fns-tz for this project
+- More modern API design than date-fns
+- Better TypeScript integration and type safety
+- Immutable DateTime objects (functional programming friendly)
+- Already in dependencies (no new package overhead)
+- Excellent timezone handling capabilities
+
+### ✅ Centralized Date Management Strategy
+**Approach**: Single source of truth pattern
+- All date operations through enhanced `dateUtils`
+- Zero tolerance for direct Date constructor usage
+- Consistent formatting across entire application
+- Timezone-aware by default with explicit configuration
+
+## Implementation Phases
+
+### Phase 1: Core Infrastructure Enhancement (Issue #111)
+**Priority**: P0-Foundation
+**Goal**: Rewrite dateUtils with Luxon backing
+
+#### 1.1 Enhanced dateUtils Implementation
+**File**: `src/lib/config.ts`
+
+```typescript
+import { DateTime } from 'luxon';
+
+export const dateUtils = {
+  // Current timestamp in database format
+  now(): string {
+    return DateTime.now().toISO(); // Returns ISO with timezone
+  },
+
+  // Convert user input (YYYY-MM-DD) to database format
+  fromUserInput(userDate: string): string {
+    return DateTime.fromISO(userDate).startOf('day').toISO();
+  },
+
+  // Convert database timestamp to user display format
+  toUserDisplay(dbDate: string): string {
+    return DateTime.fromISO(dbDate).toLocaleString(DateTime.DATE_FULL);
+  },
+
+  // Convert database timestamp to simple date (YYYY-MM-DD)
+  toUserInput(dbDate: string): string {
+    return DateTime.fromISO(dbDate).toISODate();
+  },
+
+  // Validate user input date format
+  isValidUserInput(dateString: string): boolean {
+    const parsed = DateTime.fromISO(dateString);
+    return parsed.isValid && /^\d{4}-\d{2}-\d{2}$/.test(dateString);
+  },
+
+  // Parse any date input to database format
+  toDatabase(input: string | DateTime): string {
+    if (input instanceof DateTime) {
+      return input.toISO();
+    }
+    return DateTime.fromISO(input).toISO();
+  },
+
+  // For tests: deterministic date generation
+  testDate(isoString: string): string {
+    return DateTime.fromISO(isoString).toISO();
+  },
+
+  // Timezone utilities
+  convertTimezone(date: string, targetZone: string): string {
+    return DateTime.fromISO(date).setZone(targetZone).toISO();
+  },
+
+  // Comparison utilities
+  isBefore(date1: string, date2: string): boolean {
+    return DateTime.fromISO(date1) < DateTime.fromISO(date2);
+  },
+
+  isAfter(date1: string, date2: string): boolean {
+    return DateTime.fromISO(date1) > DateTime.fromISO(date2);
+  }
+};
+```
+
+#### 1.2 Type Safety Enhancement
+**Goal**: Prevent runtime date errors with compile-time checks
+
+```typescript
+// Branded types for date strings
+export type DatabaseDateString = string & { __brand: 'DatabaseDate' };
+export type UserInputDateString = string & { __brand: 'UserInputDate' };
+export type DisplayDateString = string & { __brand: 'DisplayDate' };
+
+// Type-safe utilities
+export const typedDateUtils = {
+  toDatabaseFormat(date: string): DatabaseDateString {
+    return dateUtils.toDatabase(date) as DatabaseDateString;
+  },
+  // ... other typed utilities
+};
+```
+
+#### 1.3 Acceptance Criteria
+- [ ] All dateUtils functions use Luxon internally
+- [ ] Backward compatibility maintained for existing API
+- [ ] Comprehensive test coverage for all date utility functions
+- [ ] Type safety improvements implemented
+- [ ] Documentation updated with usage examples
+
+### Phase 2: Storage Layer Standardization (Issue #112)
+**Priority**: P0-Foundation (Depends on #111)
+**Goal**: Eliminate all direct Date usage in storage operations
+
+#### 2.1 Update `src/lib/storage/blob.ts`
+**Target violations**:
+- Replace `new Date().toISOString()` with `dateUtils.now()`
+- Standardize `uploadedAt` timestamp generation
+- Use `dateUtils.toDatabase()` for date conversions
+
+#### 2.2 Update `src/lib/utils/metadata-validation.ts`
+**Target violations**:
+- Replace manual date creation with `dateUtils` functions
+- Use Luxon-based date validation
+- Standardize metadata timestamp handling
+
+#### 2.3 Acceptance Criteria
+- [ ] Zero direct Date object usage in storage layer
+- [ ] All timestamps generated through dateUtils
+- [ ] Database compatibility maintained
+- [ ] Storage tests updated and passing
+- [ ] Property-based tests continue to work with new utilities
+
+### Phase 3: API Layer Standardization (Issue #113)
+**Priority**: P0-Foundation (Depends on #112)
+**Goal**: Consistent date handling in all API operations
+
+#### 3.1 Update `src/app/api/transcripts/handlers.ts`
+**Target violations**:
+- Replace manual date formatting with dateUtils
+- Standardize API response date formats
+- Use dateUtils.now() for all timestamps
+
+#### 3.2 Update `src/lib/utils/search-validation.ts`
+**Target violations**:
+- Date range validation using dateUtils
+- Consistent date parsing for search parameters
+
+#### 3.3 Acceptance Criteria
+- [ ] All API responses use consistent date formats
+- [ ] Date parsing uses dateUtils functions
+- [ ] API tests updated and passing
+- [ ] Error handling for invalid dates improved
+
+### Phase 4: Test Infrastructure Overhaul (Issue #114)
+**Priority**: P1-Processing (Depends on #113)
+**Goal**: Deterministic, standardized date testing
+
+#### 4.1 Update Test Utilities
+**File**: `src/__tests__/test-utils/TestTranscriptStorage.ts`
+- Replace `new Date().toISOString()` with deterministic test dates
+- Create test date generators using dateUtils
+
+#### 4.2 Update All Test Files
+**Target files** (11+ files with violations):
+- `src/__tests__/lib/storage/*.test.ts`
+- `src/__tests__/property-based/*.test.ts`
+- `src/__tests__/api/*.test.ts`
+
+**Actions**:
+- Replace `Date.now()` with deterministic test dates
+- Replace `new Date().toISOString()` with `dateUtils.testDate()`
+- Use `dateUtils.fromUserInput()` for test data creation
+- Standardize date assertions and expectations
+
+#### 4.3 Property-Based Test Enhancement
+**File**: `src/__tests__/property-based/storage-properties.test.ts`
+- Use dateUtils for date generation in Fast-Check
+- Ensure date property tests use standardized formats
+- Validate date edge cases through centralized utils
+
+#### 4.4 Acceptance Criteria
+- [ ] All tests use deterministic dates
+- [ ] Zero `new Date()` calls in test files
+- [ ] Property-based tests generate valid dates
+- [ ] Test execution is reproducible
+- [ ] Test coverage maintained or improved
+
+### Phase 5: Validation and Enforcement (Issue #115)
+**Priority**: P1-Processing (Depends on #114)
+**Goal**: Prevent future violations and enforce standards
+
+#### 5.1 ESLint Rules Implementation
+**File**: `eslint.config.mjs`
+
+```javascript
+module.exports = {
+  rules: {
+    // Prevent direct Date constructor usage
+    'no-new-date': 'error',
+    // Enforce dateUtils import
+    'import/no-restricted-paths': [
+      'error',
+      {
+        patterns: [
+          {
+            group: ['**/src/**'],
+            message: 'Use dateUtils instead of native Date objects'
+          }
+        ]
+      }
+    ]
+  }
+};
+```
+
+#### 5.2 TypeScript Configuration
+**Goal**: Compile-time date format validation
+- Strict typing for date strings
+- Branded types to prevent mixing formats
+- Utility type guards for runtime validation
+
+#### 5.3 Documentation Updates
+**Files**:
+- `CLAUDE.md` - Add date standardization guidelines
+- `src/lib/config.ts` - Comprehensive JSDoc documentation
+- Developer guides for date handling best practices
+
+#### 5.4 Acceptance Criteria
+- [ ] ESLint rules prevent direct Date usage
+- [ ] TypeScript compilation fails on date format violations
+- [ ] Comprehensive documentation available
+- [ ] Code review guidelines include date handling checks
+- [ ] CI/CD pipeline enforces date standards
+
+## Migration Strategy
+
+### Step-by-Step Implementation
+1. **Phase 1**: Enhance dateUtils foundation (no breaking changes)
+2. **Phase 2**: Update storage layer (core functionality)
+3. **Phase 3**: Update API layer (external interface)
+4. **Phase 4**: Update test infrastructure (quality assurance)
+5. **Phase 5**: Add enforcement (prevent future violations)
+
+### Risk Mitigation
+- **Backward Compatibility**: Maintain existing API contracts during migration
+- **Incremental Testing**: Validate each layer before proceeding to next
+- **Rollback Strategy**: Each phase can be reverted independently
+- **Performance Monitoring**: Ensure Luxon doesn't introduce performance regression
+
+## Validation Criteria
+
+### Technical Validation
+- [ ] Zero direct `new Date()` usage in entire codebase
+- [ ] All dates handled through Luxon-backed dateUtils
+- [ ] PostgreSQL TIMESTAMPTZ format compatibility maintained
+- [ ] Type-safe date operations throughout application
+- [ ] Deterministic test dates for reliable testing
+
+### Quality Assurance
+- [ ] All existing tests pass with new date handling
+- [ ] Property-based tests continue to find edge cases
+- [ ] API responses maintain consistent format
+- [ ] Database queries work correctly with new date utilities
+- [ ] Performance is maintained or improved
+
+### Developer Experience
+- [ ] Clear error messages for date validation failures
+- [ ] Comprehensive documentation and examples
+- [ ] ESLint prevents common date handling mistakes
+- [ ] TypeScript provides compile-time date safety
+- [ ] Easy onboarding for new developers
+
+## Success Metrics
+
+### Quantitative Goals
+- **100% dateUtils adoption** (zero direct Date usage)
+- **Zero date-related runtime errors** in production
+- **Maintained test coverage** (80%+ across all metrics)
+- **Performance within 5%** of current benchmarks
+- **All 11+ violation files** updated successfully
+
+### Qualitative Improvements
+- **Consistent timezone handling** across entire application
+- **Improved error messages** for date validation
+- **Better developer experience** with type safety
+- **Reduced date-related bugs** in future development
+- **Simplified date logic** through centralized utilities
+
+## GitHub Issues Created
+
+### Issue Tracking
+- **#111**: [INFRA] Enhance dateUtils with Luxon backing implementation
+- **#112**: [STORAGE] Standardize date handling in storage layer
+- **#113**: [API] Replace direct Date usage in API handlers and utilities  
+- **#114**: [TESTING] Overhaul test infrastructure for standardized date handling
+- **#115**: [VALIDATION] Add ESLint rules and TypeScript types for date enforcement
+
+### Dependencies
+```
+#111 → #112 → #113 → #114 → #115
+```
+
+Clear sequential dependency chain ensures systematic implementation without integration conflicts.
+
+## Timeline Estimation
+
+### Development Effort
+- **Issue #111**: 2-3 days (foundation)
+- **Issue #112**: 1-2 days (storage layer)
+- **Issue #113**: 1-2 days (API layer)
+- **Issue #114**: 3-4 days (comprehensive test updates)
+- **Issue #115**: 1-2 days (enforcement)
+
+### Total Timeline
+**8-13 days** of focused development work, implementable over 2-3 weeks with proper testing and validation.
+
+---
+
+**Implementation Status**: Ready for development
+**Priority**: P0-Foundation (critical infrastructure improvement)
+**Dependencies**: None (can start immediately)
+**Risk Level**: Low (incremental changes with backward compatibility)

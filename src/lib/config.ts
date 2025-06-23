@@ -1,6 +1,105 @@
 /**
  * Application configuration
  */
+
+/**
+ * Date and time formatting standards for the entire application
+ * SINGLE SOURCE OF TRUTH for all date handling
+ */
+export const dateFormats = {
+    /**
+     * Database storage format: ISO 8601 with timezone
+     * This is what PostgreSQL/Supabase stores and returns
+     * Example: "2024-01-15T10:30:00.000Z"
+     */
+    database: 'YYYY-MM-DDTHH:mm:ss.sssZ',
+    
+    /**
+     * User input format: Simple date for forms and API input
+     * Example: "2024-01-15"
+     */
+    userInput: 'YYYY-MM-DD',
+    
+    /**
+     * API response format: ISO 8601 with timezone (same as database)
+     * Example: "2024-01-15T10:30:00.000Z"
+     */
+    apiResponse: 'YYYY-MM-DDTHH:mm:ss.sssZ',
+    
+    /**
+     * Display format: Human-readable format for UI
+     * Example: "January 15, 2024"
+     */
+    display: 'MMMM DD, YYYY'
+} as const;
+
+/**
+ * Date utility functions for consistent formatting across the application
+ */
+export const dateUtils = {
+    /**
+     * Convert user input date (YYYY-MM-DD) to database format
+     * @param userDate - Date in YYYY-MM-DD format
+     * @returns ISO string for database storage
+     */
+    userInputToDatabase(userDate: string): string {
+        // Parse the simple date and convert to ISO string
+        // Note: This assumes UTC timezone for simple dates
+        return new Date(userDate + 'T00:00:00.000Z').toISOString();
+    },
+    
+    /**
+     * Get current timestamp in database format
+     * @returns Current time as ISO string
+     */
+    now(): string {
+        return new Date().toISOString();
+    },
+    
+    /**
+     * Convert database format to user input format
+     * @param dbDate - Date from database (ISO string)
+     * @returns Simple date string (YYYY-MM-DD)
+     */
+    databaseToUserInput(dbDate: string): string {
+        return new Date(dbDate).toISOString().split('T')[0];
+    },
+    
+    /**
+     * Validate user input date format
+     * @param dateString - Date string to validate
+     * @returns True if valid YYYY-MM-DD format
+     */
+    isValidUserInput(dateString: string): boolean {
+        const pattern = /^\d{4}-\d{2}-\d{2}$/;
+        if (!pattern.test(dateString)) {
+            return false;
+        }
+        
+        const date = new Date(dateString + 'T00:00:00.000Z');
+        return !isNaN(date.getTime()) && date.toISOString().startsWith(dateString);
+    },
+    
+    /**
+     * Parse any date input and return database format
+     * @param input - Date string or Date object
+     * @returns ISO string for database storage
+     */
+    toDatabase(input: string | Date): string {
+        if (input instanceof Date) {
+            return input.toISOString();
+        }
+        
+        // If it's already in database format, return as-is
+        if (input.includes('T')) {
+            return new Date(input).toISOString();
+        }
+        
+        // Assume it's user input format
+        return this.userInputToDatabase(input);
+    }
+} as const;
+
 export const config = {
     // Blob storage configuration
     blob: {

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { TranscriptStorage, TranscriptMetadata } from '@/lib/storage/blob';
 import { DateTime } from 'luxon';
 import { createStorageForTest } from '@/lib/storage/factories';
+import { dateUtils } from '@/lib/config';
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env.test' });
 
@@ -25,7 +26,7 @@ describe.sequential('TranscriptStorage - Retrieval Functionality', () => {
     const baseMetadata: Omit<TranscriptMetadata, 'uploadedAt' | 'version'> = {
         sourceId: testSourceId,
         title: "Test Retrieval Transcript",
-        date: DateTime.fromISO("2023-04-15", { zone: 'utc' }).toFormat("yyyy-MM-dd'T'HH:mm:ssZZ"),
+        date: "2023-04-15", // Use simple YYYY-MM-DD format as expected by validation
         speakers: ["Speaker A", "Speaker B"],
         format: "json",
         processingStatus: "processed",
@@ -76,7 +77,9 @@ describe.sequential('TranscriptStorage - Retrieval Functionality', () => {
         // 3. Verify complete metadata
         const metadata = result.metadata;
         expect(metadata.title).toBe(baseMetadata.title);
-        expect(metadata.date).toBe(baseMetadata.date);
+        // Database converts user input date to full ISO timestamp with timezone
+        // Note: Database returns +00:00 format instead of Z format
+        expect(metadata.date).toBe('2023-04-15T00:00:00+00:00');
         expect(metadata.speakers).toEqual(baseMetadata.speakers);
         expect(metadata.format).toBe(baseMetadata.format);
         expect(metadata.processingStatus).toBe('processed');

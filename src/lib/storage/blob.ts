@@ -15,6 +15,12 @@ import {
     buildSearchFilters,
     type SearchQuery
 } from '@/lib/utils/search-validation';
+import {
+    validateTranscriptMetadata,
+    normalizeMetadata,
+    type MetadataValidationResult
+} from '@/lib/utils/metadata-validation';
+import { dateUtils } from '@/lib/config';
 
 
 /**
@@ -96,15 +102,10 @@ export class TranscriptStorage {
         content: Parameters<typeof put>[1],
         metadata: Omit<TranscriptMetadata, 'uploadedAt' | 'version'>
     ): Promise<TranscriptBlobResponse> {
-        // Check for required fields
-        if (!metadata.sourceId) {
-            throw new Error('Source ID is required');
-        }
-
-        // Ensure speakers is always an array
-        const speakers = metadata.speakers || [];
-        if (!Array.isArray(speakers)) {
-            throw new Error('Speakers must be an array');
+        // Validate metadata using utility functions
+        const validation = validateTranscriptMetadata(metadata);
+        if (!validation.isValid) {
+            throw new Error(`Invalid metadata: ${validation.errors.join(', ')}`);
         }
 
         // Get the latest version if this sourceId already exists
@@ -117,14 +118,12 @@ export class TranscriptStorage {
         // Create blob key with versioning
         const blobKey = this.generateBlobKey(metadata.sourceId, version);
 
-        // Complete the metadata
-        const fullMetadata: TranscriptMetadata = {
+        // Normalize metadata with version and timestamp
+        const fullMetadata = normalizeMetadata({
             ...metadata,
-            speakers, // Use the validated speakers array
             version,
-            uploadedAt: new Date().toISOString(),
-            processingStatus: metadata.processingStatus || 'pending'
-        };
+            uploadedAt: dateUtils.now()
+        });
 
         // Upload to Vercel Blob
         const result = await put(blobKey, content, {
@@ -258,7 +257,7 @@ export class TranscriptStorage {
         const updates = {
             processing_status: status,
             ...(status === 'processed' && {
-                processing_completed_at: new Date().toISOString()
+                processing_completed_at: dateUtils.now()
             })
         };
 
