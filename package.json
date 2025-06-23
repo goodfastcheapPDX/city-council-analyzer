@@ -10,6 +10,8 @@
         "test": "vitest run",
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",
+        "test:setup": "./scripts/setup-test-db.sh",
+        "test:reset": "SUPABASE_ACCESS_TOKEN=sbp_bbb4deaf089cc3d67919ba373edf9f4980b0c992 npx supabase db reset",
         "test:storage": "vitest run src/__tests__/lib/storage --max-concurrency=1 --sequence.concurrent=false",
         "test:api": "./scripts/test-api-manual.sh",
         "typecheck": "npx tsc --noEmit --project tsconfig.json",

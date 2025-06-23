@@ -16,6 +16,10 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 describe.sequential('TranscriptStorage - Listing and Search Functionality', () => {
     let storage: TranscriptStorage;
     const testSourceIds: string[] = [];
+    
+    // Flag to prevent global cleanup from interfering with this test suite
+    // This suite sets up shared test data that should persist across tests
+    (globalThis as any).__skipGlobalCleanup = true;
 
     // Test data - create multiple transcripts with various properties
     const testTranscripts = [
@@ -152,6 +156,9 @@ describe.sequential('TranscriptStorage - Listing and Search Functionality', () =
                 console.warn(`Cleanup failed for ${sourceId}:`, error);
             }
         }
+        
+        // Reset the global cleanup flag
+        (globalThis as any).__skipGlobalCleanup = false;
     }, TIMEOUT);
 
     it('should list all transcripts with correct pagination', async () => {
