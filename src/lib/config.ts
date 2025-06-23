@@ -18,10 +18,11 @@ export type DisplayDateString = string & { readonly __brand: 'DisplayDate' };
 export const dateFormats = {
     /**
      * Database storage format: ISO 8601 with timezone
-     * This is what PostgreSQL/Supabase stores and returns
-     * Example: "2024-01-15T10:30:00.000Z"
+     * PostgreSQL/Supabase returns: "2024-01-15T10:30:00.000+00:00"
+     * Our dateUtils normalize to: "2024-01-15T10:30:00.000Z" (UTC)
+     * Both formats are equivalent and valid ISO 8601
      */
-    database: 'YYYY-MM-DDTHH:mm:ss.sssZ',
+    database: 'YYYY-MM-DDTHH:mm:ss.sss[Z|±HH:mm]',   
     
     /**
      * User input format: Simple date for forms and API input
@@ -30,7 +31,7 @@ export const dateFormats = {
     userInput: 'YYYY-MM-DD',
     
     /**
-     * API response format: ISO 8601 with timezone (same as database)
+     * API response format: ISO 8601 UTC (normalized by dateUtils)
      * Example: "2024-01-15T10:30:00.000Z"
      */
     apiResponse: 'YYYY-MM-DDTHH:mm:ss.sssZ',
@@ -44,6 +45,10 @@ export const dateFormats = {
 
 /**
  * Date utility functions for consistent formatting across the application
+ * 
+ * NOTE: All functions normalize dates to UTC format (ending in Z) for consistency,
+ * even though PostgreSQL may return dates with explicit timezone offsets (+00:00).
+ * Both formats represent the same time and are valid ISO 8601.
  */
 export const dateUtils = {
     /**
