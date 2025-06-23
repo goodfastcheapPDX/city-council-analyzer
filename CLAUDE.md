@@ -87,6 +87,7 @@ claude/
 - **No commits without explicit user request**
 - **When making a commit reflecting task completion, update the LAST_TIME_NEXT_TIME.md file to record that**
 - **You only need to run typecheck before the commit, not after**
+- **Write to LAST_TIME_NEXT_TIME.md before making commits**
 
 **For commit guidelines**: See @claude/rules/git-commit-style.md
 
