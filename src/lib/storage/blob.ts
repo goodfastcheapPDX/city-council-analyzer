@@ -593,7 +593,16 @@ export class TranscriptStorage {
      * @returns Blob key string
      */
     private generateBlobKey(sourceId: string, version: number): string {
-        return `${this.pathPrefix}/${sourceId}/v${version}_${nanoid(8)}`;
+        // Sanitize sourceId to prevent path issues:
+        // - Replace forward slashes with hyphens to avoid double slashes
+        // - Replace spaces with underscores for cleaner paths
+        // - Remove other problematic characters that could cause URL issues
+        const sanitizedSourceId = sourceId
+            .replace(/\//g, '-')    // Replace forward slashes
+            .replace(/\s+/g, '_')   // Replace spaces with underscores
+            .replace(/[<>:"|?*]/g, '-'); // Replace other problematic characters
+            
+        return `${this.pathPrefix}/${sanitizedSourceId}/v${version}_${nanoid(8)}`;
     }
 
     async beginTransaction(): Promise<void> {
