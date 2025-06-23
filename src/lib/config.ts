@@ -2,6 +2,15 @@
  * Application configuration
  */
 
+import { DateTime } from 'luxon';
+
+/**
+ * Branded types for type-safe date handling
+ */
+export type DatabaseDateString = string & { readonly __brand: 'DatabaseDate' };
+export type UserInputDateString = string & { readonly __brand: 'UserInputDate' };
+export type DisplayDateString = string & { readonly __brand: 'DisplayDate' };
+
 /**
  * Date and time formatting standards for the entire application
  * SINGLE SOURCE OF TRUTH for all date handling
@@ -45,7 +54,15 @@ export const dateUtils = {
     userInputToDatabase(userDate: string): string {
         // Parse the simple date and convert to ISO string
         // Note: This assumes UTC timezone for simple dates
-        return new Date(userDate + 'T00:00:00.000Z').toISOString();
+        const parsed = DateTime.fromISO(userDate, { zone: 'utc' }).startOf('day');
+        if (!parsed.isValid) {
+            throw new Error(`Invalid user input date: ${userDate}. Expected format: YYYY-MM-DD`);
+        }
+        const result = parsed.toISO();
+        if (!result) {
+            throw new Error(`Failed to convert date to ISO format: ${userDate}`);
+        }
+        return result;
     },
     
     /**
@@ -53,7 +70,11 @@ export const dateUtils = {
      * @returns Current time as ISO string
      */
     now(): string {
-        return new Date().toISOString();
+        const result = DateTime.now().toUTC().toISO();
+        if (!result) {
+            throw new Error('Failed to generate current timestamp');
+        }
+        return result;
     },
     
     /**
@@ -62,7 +83,15 @@ export const dateUtils = {
      * @returns Simple date string (YYYY-MM-DD)
      */
     databaseToUserInput(dbDate: string): string {
-        return new Date(dbDate).toISOString().split('T')[0];
+        const parsed = DateTime.fromISO(dbDate).toUTC();
+        if (!parsed.isValid) {
+            throw new Error(`Invalid database date format: ${dbDate}. Expected ISO 8601 format`);
+        }
+        const result = parsed.toISODate();
+        if (!result) {
+            throw new Error(`Failed to convert database date to user format: ${dbDate}`);
+        }
+        return result;
     },
     
     /**
@@ -76,27 +105,201 @@ export const dateUtils = {
             return false;
         }
         
-        const date = new Date(dateString + 'T00:00:00.000Z');
-        return !isNaN(date.getTime()) && date.toISOString().startsWith(dateString);
+        const parsed = DateTime.fromISO(dateString, { zone: 'utc' });
+        return parsed.isValid && parsed.toISODate() === dateString;
     },
     
     /**
      * Parse any date input and return database format
-     * @param input - Date string or Date object
+     * @param input - Date string, Date object, or DateTime object
      * @returns ISO string for database storage
      */
-    toDatabase(input: string | Date): string {
+    toDatabase(input: string | Date | DateTime): string {
         if (input instanceof Date) {
-            return input.toISOString();
+            const converted = DateTime.fromJSDate(input).toUTC();
+            if (!converted.isValid) {
+                throw new Error(`Invalid Date object provided: ${input}`);
+            }
+            const result = converted.toISO();
+            if (!result) {
+                throw new Error(`Failed to convert Date object to ISO format: ${input}`);
+            }
+            return result;
         }
         
-        // If it's already in database format, return as-is
+        if (input instanceof DateTime) {
+            const converted = input.toUTC();
+            if (!converted.isValid) {
+                throw new Error(`Invalid DateTime object provided: ${input}`);
+            }
+            const result = converted.toISO();
+            if (!result) {
+                throw new Error(`Failed to convert DateTime object to ISO format: ${input}`);
+            }
+            return result;
+        }
+        
+        // If it's already in database format, return as-is after validation
         if (input.includes('T')) {
-            return new Date(input).toISOString();
+            const parsed = DateTime.fromISO(input).toUTC();
+            if (!parsed.isValid) {
+                throw new Error(`Invalid ISO date string: ${input}`);
+            }
+            const result = parsed.toISO();
+            if (!result) {
+                throw new Error(`Failed to convert ISO date string: ${input}`);
+            }
+            return result;
         }
         
         // Assume it's user input format
         return this.userInputToDatabase(input);
+    },
+
+    /**
+     * Generate deterministic test date for reliable testing
+     * @param isoString - ISO date string for testing
+     * @returns ISO string in database format
+     */
+    testDate(isoString: string): string {
+        const parsed = DateTime.fromISO(isoString, { zone: 'utc' });
+        if (!parsed.isValid) {
+            throw new Error(`Invalid test date: ${isoString}. Expected ISO 8601 format`);
+        }
+        const result = parsed.toISO();
+        if (!result) {
+            throw new Error(`Failed to convert test date to ISO format: ${isoString}`);
+        }
+        return result;
+    },
+
+    /**
+     * Convert date to different timezone
+     * @param date - ISO date string
+     * @param targetZone - Target timezone (e.g., 'America/New_York')
+     * @returns ISO string in target timezone
+     */
+    convertTimezone(date: string, targetZone: string): string {
+        const parsed = DateTime.fromISO(date);
+        if (!parsed.isValid) {
+            throw new Error(`Invalid date for timezone conversion: ${date}`);
+        }
+        const converted = parsed.setZone(targetZone);
+        if (!converted.isValid) {
+            throw new Error(`Invalid timezone: ${targetZone}`);
+        }
+        const result = converted.toISO();
+        if (!result) {
+            throw new Error(`Failed to convert date to timezone ${targetZone}: ${date}`);
+        }
+        return result;
+    },
+
+    /**
+     * Check if first date is before second date
+     * @param date1 - First date (ISO string)
+     * @param date2 - Second date (ISO string)
+     * @returns True if date1 is before date2
+     */
+    isBefore(date1: string, date2: string): boolean {
+        const parsed1 = DateTime.fromISO(date1);
+        const parsed2 = DateTime.fromISO(date2);
+        if (!parsed1.isValid) {
+            throw new Error(`Invalid first date for comparison: ${date1}`);
+        }
+        if (!parsed2.isValid) {
+            throw new Error(`Invalid second date for comparison: ${date2}`);
+        }
+        return parsed1 < parsed2;
+    },
+
+    /**
+     * Check if first date is after second date
+     * @param date1 - First date (ISO string)
+     * @param date2 - Second date (ISO string)
+     * @returns True if date1 is after date2
+     */
+    isAfter(date1: string, date2: string): boolean {
+        const parsed1 = DateTime.fromISO(date1);
+        const parsed2 = DateTime.fromISO(date2);
+        if (!parsed1.isValid) {
+            throw new Error(`Invalid first date for comparison: ${date1}`);
+        }
+        if (!parsed2.isValid) {
+            throw new Error(`Invalid second date for comparison: ${date2}`);
+        }
+        return parsed1 > parsed2;
+    },
+
+    /**
+     * Format date for user display (human-readable)
+     * @param date - ISO date string
+     * @returns Formatted date string (e.g., "January 15, 2024")
+     */
+    toUserDisplay(date: string): string {
+        const parsed = DateTime.fromISO(date);
+        if (!parsed.isValid) {
+            throw new Error(`Invalid date for display formatting: ${date}`);
+        }
+        return parsed.toLocaleString(DateTime.DATE_FULL);
+    }
+} as const;
+
+/**
+ * Type-safe date utilities with branded types for compile-time safety
+ */
+export const typedDateUtils = {
+    /**
+     * Convert to database format with type safety
+     * @param date - Date string or Date object
+     * @returns Type-safe database date string
+     */
+    toDatabaseFormat(date: string | Date): DatabaseDateString {
+        return dateUtils.toDatabase(date) as DatabaseDateString;
+    },
+
+    /**
+     * Convert user input to database format with type safety
+     * @param userDate - User input date string
+     * @returns Type-safe database date string
+     */
+    fromUserInput(userDate: UserInputDateString): DatabaseDateString {
+        return dateUtils.userInputToDatabase(userDate) as DatabaseDateString;
+    },
+
+    /**
+     * Convert database date to user input format with type safety
+     * @param dbDate - Database date string
+     * @returns Type-safe user input date string
+     */
+    toUserInput(dbDate: DatabaseDateString): UserInputDateString {
+        return dateUtils.databaseToUserInput(dbDate) as UserInputDateString;
+    },
+
+    /**
+     * Convert database date to display format with type safety
+     * @param dbDate - Database date string
+     * @returns Type-safe display date string
+     */
+    toDisplay(dbDate: DatabaseDateString): DisplayDateString {
+        return dateUtils.toUserDisplay(dbDate) as DisplayDateString;
+    },
+
+    /**
+     * Generate current timestamp with type safety
+     * @returns Type-safe database date string
+     */
+    now(): DatabaseDateString {
+        return dateUtils.now() as DatabaseDateString;
+    },
+
+    /**
+     * Generate test date with type safety
+     * @param isoString - ISO date string for testing
+     * @returns Type-safe database date string
+     */
+    testDate(isoString: string): DatabaseDateString {
+        return dateUtils.testDate(isoString) as DatabaseDateString;
     }
 } as const;
 
