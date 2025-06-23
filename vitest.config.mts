@@ -1,11 +1,14 @@
 import { defineConfig } from 'vitest/config';
 import tsconfigPaths from 'vite-tsconfig-paths';
+import { loadEnv } from 'vite';
 
 export default defineConfig({
     plugins: [tsconfigPaths()],
     test: {
         globals: true,
         environment: 'node',
+        env: loadEnv('test', process.cwd(), ''),
+        setupFiles: ['src/__tests__/setup.ts'],
         include: ['src/**/*.{test,spec}.{js,ts,jsx,tsx}'], // Adjusted include pattern
         coverage: {
             provider: 'v8',
