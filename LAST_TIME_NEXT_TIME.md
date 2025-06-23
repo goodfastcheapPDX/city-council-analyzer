@@ -63,7 +63,15 @@
 
 ### Immediate Tasks (Next Session)
 
-1. **Frontend API Integration** 🎯 **TOP PRIORITY** 
+1. **Date Standardization Initiative** 🎯 **NEW TOP PRIORITY**
+   - [ ] Issue #111: Enhance dateUtils with Luxon backing implementation
+   - [ ] Issue #112: Standardize date handling in storage layer
+   - [ ] Issue #113: Replace direct Date usage in API handlers
+   - [ ] Issue #114: Overhaul test infrastructure for standardized dates
+   - [ ] Issue #116: Add ESLint rules and TypeScript types for enforcement
+   - **Rationale**: Found 11+ files with direct Date usage violations, needs systematic fix
+
+2. **Frontend API Integration** 🔄 **SECOND PRIORITY** 
    - [x] ✅ ~~Fix GET `/api/transcripts` listing issue~~ **COMPLETED**
    - [x] ✅ ~~Resolve testing infrastructure cookies() error~~ **COMPLETED**
    - [ ] Replace mock implementations in `TranscriptUpload.tsx` with real API calls
@@ -133,3 +141,43 @@ npm run dev
 
 ---
 *Last updated: 2025-06-23*
+
+## Latest Commit (2025-06-23)
+✅ **Database Isolation Implementation Committed**
+- Committed comprehensive database isolation system for testing
+- Added automated test database setup script with Supabase CLI integration
+- Configured real database testing environment with .env.test loading
+- Implemented test factories using isolated test database instead of mocks
+- Added comprehensive todo tracking document for database isolation phases
+- All changes type-checked and committed successfully
+
+## Latest Session (2025-06-23) - Date Standardization Initiative
+✅ **Comprehensive Date Standardization Plan Created**
+- Analyzed current date handling across entire application stack
+- Found 11+ files with direct `new Date()` usage violations
+- Created comprehensive implementation plan in `claude/todos/date-standardization-implementation.txt`
+- **Key Decision**: Use Luxon (already installed) instead of date-fns-tz for backing implementation
+- **Schema Analysis**: Current PostgreSQL TIMESTAMPTZ schema is excellent - no changes needed
+- Created 5 sequential GitHub issues (#111-#116) to track systematic implementation
+- **Priority**: Elevated to top priority due to widespread violations and infrastructure importance
+
+### Date Standardization Context
+**Current Problems Identified**:
+- `dateUtils` in config.ts uses native Date objects instead of Luxon
+- 11+ files using direct `new Date()` calls instead of centralized utilities
+- Tests using `Date.now()` creating non-deterministic test behavior
+- Manual ISO string generation throughout codebase
+- Missing timezone-aware utilities despite having Luxon available
+
+**Implementation Strategy**:
+1. Issue #111: Enhance dateUtils with Luxon backing (foundation)
+2. Issue #112: Storage layer standardization (core data)
+3. Issue #113: API layer standardization (external interface)
+4. Issue #114: Test infrastructure overhaul (quality assurance)
+5. Issue #116: ESLint rules and TypeScript enforcement (prevent future violations)
+
+**Technical Rationale**: 
+- Luxon v3.5.0 already installed (superior to date-fns-tz)
+- PostgreSQL TIMESTAMPTZ schema is industry standard (no changes needed)
+- Current `+00:00` format is PostgreSQL convention (not a bug)
+- Systematic approach prevents breaking changes during migration

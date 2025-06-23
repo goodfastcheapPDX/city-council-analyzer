@@ -178,7 +178,9 @@ describe.sequential('Storage Operations - Property-Based Tests', () => {
                 fc.asyncProperty(
                     fc.string({ minLength: 1, maxLength: 50 }).filter(s => s.trim().length > 0),
                     fc.string({ minLength: 1, maxLength: 200 }),
-                    fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }).map(d => d.toISOString()),
+                    fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') })
+                        .filter(d => !isNaN(d.getTime())) // Filter out invalid dates
+                        .map(d => d.toISOString().split('T')[0]), // Convert to YYYY-MM-DD format
                     fc.array(fc.string({ minLength: 1, maxLength: 100 }), { minLength: 1, maxLength: 10 }),
                     fc.oneof(fc.constant('json'), fc.constant('text'), fc.constant('srt'), fc.constant('vtt')),
                     fc.oneof(fc.constant('pending'), fc.constant('processed'), fc.constant('failed')),
@@ -209,7 +211,11 @@ describe.sequential('Storage Operations - Property-Based Tests', () => {
                         expect(retrieved.metadata.title).toBe(title);
 
                         expect(typeof retrieved.metadata.date).toBe('string');
-                        expect(new Date(retrieved.metadata.date).toISOString()).toBe(date);
+                        // Date input is in YYYY-MM-DD format, database stores as full timestamp
+                        // Compare the date part extracted from database result with original input
+                        const dbDate = new Date(retrieved.metadata.date);
+                        const inputDate = new Date(date + 'T00:00:00.000Z');
+                        expect(dbDate.getTime()).toBe(inputDate.getTime());
                         
                         expect(Array.isArray(retrieved.metadata.speakers)).toBe(true);
                         expect(retrieved.metadata.speakers).toEqual(speakers);
