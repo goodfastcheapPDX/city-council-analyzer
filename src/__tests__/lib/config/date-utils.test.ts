@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { dateUtils, dateFormats } from '@/lib/config';
+import { dateUtils, dateFormats, typedDateUtils, DatabaseDateString, UserInputDateString, DisplayDateString } from '@/lib/config';
 
 describe('Date Utilities - Single Source of Truth', () => {
     describe('dateUtils.userInputToDatabase', () => {
@@ -235,6 +235,406 @@ describe('Date Utilities - Single Source of Truth', () => {
             
             expect(forDisplay).toBe(userInputDate);
             expect(fromDatabase.startsWith(userInputDate)).toBe(true);
+        });
+    });
+
+    describe('Enhanced Date Utilities', () => {
+        describe('dateUtils.testDate', () => {
+            it('should generate deterministic test dates', () => {
+                // This test ensures that test date generation is consistent and reliable,
+                // which is critical for reproducible test results and preventing
+                // flaky tests due to time-dependent behavior.
+                const testInput = '2024-01-15T10:30:00.000Z';
+                const result = dateUtils.testDate(testInput);
+                
+                expect(result).toBe('2024-01-15T10:30:00.000Z');
+                expect(result).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/);
+            });
+
+            it('should throw error for invalid test dates', () => {
+                // This test ensures that invalid test dates are caught early,
+                // preventing test setup errors and maintaining test reliability
+                // across different development environments.
+                const invalidDates = [
+                    'invalid-date',
+                    '2024-13-01',
+                    '2024-01-32',
+                    'not-a-date'
+                ];
+
+                invalidDates.forEach(invalidDate => {
+                    expect(() => dateUtils.testDate(invalidDate))
+                        .toThrow(/Invalid test date/);
+                });
+            });
+        });
+
+        describe('dateUtils.convertTimezone', () => {
+            it('should convert dates to different timezones', () => {
+                // This test ensures timezone conversion works correctly,
+                // which is essential for handling user data from different
+                // geographic locations and displaying times appropriately.
+                const utcDate = '2024-01-15T12:00:00.000Z';
+                const nyResult = dateUtils.convertTimezone(utcDate, 'America/New_York');
+                const laResult = dateUtils.convertTimezone(utcDate, 'America/Los_Angeles');
+                
+                expect(nyResult).toMatch(/2024-01-15T\d{2}:\d{2}:\d{2}\.\d{3}-\d{2}:\d{2}/);
+                expect(laResult).toMatch(/2024-01-15T\d{2}:\d{2}:\d{2}\.\d{3}-\d{2}:\d{2}/);
+                expect(nyResult).not.toBe(laResult); // Different timezones should produce different results
+            });
+
+            it('should throw error for invalid timezones', () => {
+                // This test ensures that invalid timezone specifications are caught,
+                // preventing runtime errors when processing user data with
+                // malformed or unsupported timezone information.
+                const validDate = '2024-01-15T12:00:00.000Z';
+                const invalidTimezones = [
+                    'Invalid/Timezone',
+                    'NotReal/City',
+                    'BadFormat'
+                ];
+
+                invalidTimezones.forEach(timezone => {
+                    expect(() => dateUtils.convertTimezone(validDate, timezone))
+                        .toThrow(/Invalid timezone/);
+                });
+            });
+
+            it('should throw error for invalid dates in timezone conversion', () => {
+                // This test ensures that invalid input dates are rejected during
+                // timezone conversion, maintaining data integrity throughout
+                // the timezone transformation process.
+                const invalidDates = ['invalid-date', '2024-13-01'];
+                const validTimezone = 'America/New_York';
+
+                invalidDates.forEach(invalidDate => {
+                    expect(() => dateUtils.convertTimezone(invalidDate, validTimezone))
+                        .toThrow(/Invalid date for timezone conversion/);
+                });
+            });
+        });
+
+        describe('dateUtils.isBefore and isAfter', () => {
+            it('should correctly compare dates', () => {
+                // This test ensures date comparison utilities work correctly,
+                // which is essential for temporal queries, date filtering,
+                // and chronological ordering in the transcript analysis system.
+                const earlierDate = '2024-01-15T10:00:00.000Z';
+                const laterDate = '2024-01-15T11:00:00.000Z';
+                
+                expect(dateUtils.isBefore(earlierDate, laterDate)).toBe(true);
+                expect(dateUtils.isBefore(laterDate, earlierDate)).toBe(false);
+                expect(dateUtils.isBefore(earlierDate, earlierDate)).toBe(false);
+                
+                expect(dateUtils.isAfter(laterDate, earlierDate)).toBe(true);
+                expect(dateUtils.isAfter(earlierDate, laterDate)).toBe(false);
+                expect(dateUtils.isAfter(earlierDate, earlierDate)).toBe(false);
+            });
+
+            it('should throw errors for invalid dates in comparisons', () => {
+                // This test ensures that date comparison functions reject invalid
+                // input dates, preventing logical errors in temporal analysis
+                // and maintaining data integrity in date-based operations.
+                const validDate = '2024-01-15T10:00:00.000Z';
+                const invalidDate = 'invalid-date';
+
+                expect(() => dateUtils.isBefore(invalidDate, validDate))
+                    .toThrow(/Invalid first date for comparison/);
+                expect(() => dateUtils.isBefore(validDate, invalidDate))
+                    .toThrow(/Invalid second date for comparison/);
+                expect(() => dateUtils.isAfter(invalidDate, validDate))
+                    .toThrow(/Invalid first date for comparison/);
+                expect(() => dateUtils.isAfter(validDate, invalidDate))
+                    .toThrow(/Invalid second date for comparison/);
+            });
+
+            it('should handle valid date comparisons with mathematical consistency', () => {
+                // This property test ensures that date comparison functions are
+                // mathematically consistent across all valid date combinations,
+                // maintaining logical correctness in temporal analysis operations.
+                fc.assert(
+                    fc.property(
+                        fc.date({ 
+                            min: new Date('2020-01-01'), 
+                            max: new Date('2030-12-31'),
+                            noInvalidDate: true // Only valid dates for mathematical consistency
+                        }),
+                        fc.date({ 
+                            min: new Date('2020-01-01'), 
+                            max: new Date('2030-12-31'),
+                            noInvalidDate: true
+                        }),
+                        (date1, date2) => {
+                            const iso1 = date1.toISOString();
+                            const iso2 = date2.toISOString();
+                            
+                            const isBefore = dateUtils.isBefore(iso1, iso2);
+                            const isAfter = dateUtils.isAfter(iso1, iso2);
+                            const isEqual = iso1 === iso2;
+                            
+                            // Exactly one of these should be true (mutually exclusive)
+                            const trueCount = [isBefore, isAfter, isEqual].filter(x => x).length;
+                            expect(trueCount).toBe(1);
+                        }
+                    ),
+                    { numRuns: 50 }
+                );
+            });
+        });
+
+        describe('dateUtils.toUserDisplay', () => {
+            it('should format dates for user display', () => {
+                // This test ensures that date display formatting works correctly,
+                // which is essential for presenting dates in a human-readable
+                // format throughout the user interface.
+                const testDate = '2024-01-15T10:30:00.000Z';
+                const displayFormat = dateUtils.toUserDisplay(testDate);
+                
+                expect(displayFormat).toContain('January');
+                expect(displayFormat).toContain('15');
+                expect(displayFormat).toContain('2024');
+            });
+
+            it('should throw error for invalid dates in display formatting', () => {
+                // This test ensures that invalid dates are rejected during
+                // display formatting, preventing display errors and maintaining
+                // consistent user experience across the application.
+                const invalidDates = ['invalid-date', '2024-13-01', 'not-a-date'];
+
+                invalidDates.forEach(invalidDate => {
+                    expect(() => dateUtils.toUserDisplay(invalidDate))
+                        .toThrow(/Invalid date for display formatting/);
+                });
+            });
+        });
+    });
+
+    describe('Error Handling for Core Functions', () => {
+        describe('dateUtils.userInputToDatabase error cases', () => {
+            it('should throw meaningful errors for invalid user input', () => {
+                // This test ensures that invalid user input dates are properly
+                // rejected with clear error messages, helping developers and users
+                // understand and fix date input problems quickly.
+                const invalidInputs = [
+                    'invalid-date',
+                    '2024-13-01',
+                    '2024-01-32',
+                    '24-01-15',
+                    '2024/01/15'
+                ];
+
+                invalidInputs.forEach(invalidInput => {
+                    expect(() => dateUtils.userInputToDatabase(invalidInput))
+                        .toThrow(/Invalid user input date.*Expected format: YYYY-MM-DD/);
+                });
+            });
+        });
+
+        describe('dateUtils.databaseToUserInput error cases', () => {
+            it('should throw meaningful errors for invalid database dates', () => {
+                // This test ensures that corrupted or malformed database dates
+                // are properly handled with clear error messages, preventing
+                // system failures when processing inconsistent data.
+                const invalidDbDates = [
+                    'invalid-date',
+                    '2024-13-01T00:00:00.000Z',
+                    'not-an-iso-string'
+                ];
+
+                invalidDbDates.forEach(invalidDate => {
+                    expect(() => dateUtils.databaseToUserInput(invalidDate))
+                        .toThrow(/Invalid database date format.*Expected ISO 8601 format/);
+                });
+            });
+        });
+
+        describe('dateUtils.toDatabase error cases', () => {
+            it('should throw meaningful errors for invalid Date objects', () => {
+                // This test ensures that invalid Date objects are properly
+                // rejected, preventing silent failures when converting
+                // potentially corrupted Date instances to database format.
+                const invalidDate = new Date('invalid-date');
+                
+                expect(() => dateUtils.toDatabase(invalidDate))
+                    .toThrow(/Invalid Date object provided/);
+            });
+
+            it('should throw meaningful errors for invalid ISO strings', () => {
+                // This test ensures that malformed ISO date strings are properly
+                // handled during database conversion, maintaining data integrity
+                // throughout the date processing pipeline.
+                const invalidIsoStrings = [
+                    '2024-13-01T25:00:00.000Z', // Invalid month and hour
+                    '2024-01-32T10:00:00.000Z'  // Invalid day
+                ];
+
+                invalidIsoStrings.forEach(invalidIso => {
+                    expect(() => dateUtils.toDatabase(invalidIso))
+                        .toThrow(/Invalid.*date string/);
+                });
+            });
+        });
+    });
+
+    describe('Type-Safe Date Utilities', () => {
+        describe('typedDateUtils', () => {
+            it('should provide type-safe database format conversion', () => {
+                // This test ensures that type-safe utilities maintain the same
+                // functionality as regular utilities while providing compile-time
+                // type safety for preventing date format mixing errors.
+                const userDate = '2024-01-15';
+                const dbDate = typedDateUtils.toDatabaseFormat(userDate);
+                
+                expect(dbDate).toBe('2024-01-15T00:00:00.000Z');
+                expect(typeof dbDate).toBe('string');
+            });
+
+            it('should provide type-safe user input conversion', () => {
+                // This test ensures that branded type conversions work correctly
+                // while maintaining runtime functionality, supporting both
+                // type safety and backward compatibility.
+                const userInput = '2024-01-15' as UserInputDateString;
+                const dbDate = typedDateUtils.fromUserInput(userInput);
+                const backToUser = typedDateUtils.toUserInput(dbDate);
+                
+                expect(dbDate).toBe('2024-01-15T00:00:00.000Z');
+                expect(backToUser).toBe('2024-01-15');
+            });
+
+            it('should provide type-safe display formatting', () => {
+                // This test ensures that type-safe display formatting maintains
+                // functionality while providing compile-time guarantees about
+                // date format consistency across the user interface.
+                const dbDate = '2024-01-15T10:30:00.000Z' as DatabaseDateString;
+                const displayDate = typedDateUtils.toDisplay(dbDate);
+                
+                expect(displayDate).toContain('January');
+                expect(displayDate).toContain('15');
+                expect(displayDate).toContain('2024');
+            });
+
+            it('should provide type-safe current timestamp generation', () => {
+                // This test ensures that type-safe timestamp generation produces
+                // valid database format dates while maintaining compile-time
+                // type safety for preventing format confusion.
+                const now = typedDateUtils.now();
+                
+                expect(now).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/);
+                expect(typeof now).toBe('string');
+            });
+
+            it('should provide type-safe test date generation', () => {
+                // This test ensures that type-safe test utilities work correctly
+                // for creating deterministic test scenarios while maintaining
+                // compile-time type safety guarantees.
+                const testInput = '2024-01-15T10:30:00.000Z';
+                const testDate = typedDateUtils.testDate(testInput);
+                
+                expect(testDate).toBe('2024-01-15T10:30:00.000Z');
+                expect(typeof testDate).toBe('string');
+            });
+        });
+    });
+
+    describe('Luxon Integration Properties', () => {
+        describe('UTC timezone consistency', () => {
+            it('should always return UTC timezone for valid database operations', () => {
+                // This property test ensures that all valid database date operations
+                // consistently use UTC timezone, preventing timezone-related
+                // bugs in date storage and retrieval operations.
+                fc.assert(
+                    fc.property(
+                        fc.date({ 
+                            min: new Date('2020-01-01'), 
+                            max: new Date('2030-12-31'),
+                            noInvalidDate: true // Only generate valid dates
+                        }),
+                        (date) => {
+                            const dbFormat = dateUtils.toDatabase(date);
+                            expect(dbFormat).toMatch(/Z$/); // Should end with Z (UTC)
+                        }
+                    ),
+                    { numRuns: 50 }
+                );
+            });
+
+            it('should properly handle invalid dates in database operations', () => {
+                // This test ensures that invalid Date objects are properly rejected
+                // with meaningful error messages, maintaining defensive programming
+                // principles throughout the date handling system.
+                fc.assert(
+                    fc.property(
+                        fc.date({ 
+                            min: new Date('2020-01-01'), 
+                            max: new Date('2030-12-31'),
+                            noInvalidDate: false // Include invalid dates
+                        }),
+                        (date) => {
+                            if (isNaN(date.getTime())) {
+                                // Invalid dates should throw meaningful errors
+                                expect(() => dateUtils.toDatabase(date))
+                                    .toThrow(/Invalid Date object provided/);
+                            } else {
+                                // Valid dates should work correctly
+                                const dbFormat = dateUtils.toDatabase(date);
+                                expect(dbFormat).toMatch(/Z$/);
+                            }
+                        }
+                    ),
+                    { numRuns: 50 }
+                );
+            });
+
+            it('should handle user input dates consistently across timezones', () => {
+                // This test ensures that user input date conversion is consistent
+                // regardless of system timezone, preventing date shifting bugs
+                // that could affect transcript metadata accuracy.
+                const userInputs = [
+                    '2024-01-15',
+                    '2024-02-29', // Leap year
+                    '2024-12-31'
+                ];
+
+                userInputs.forEach(userInput => {
+                    const dbFormat = dateUtils.userInputToDatabase(userInput);
+                    expect(dbFormat).toMatch(/Z$/); // Should be UTC
+                    expect(dbFormat.startsWith(userInput)).toBe(true); // Should preserve date
+                });
+            });
+        });
+
+        describe('Error message quality', () => {
+            it('should provide helpful error messages for all error cases', () => {
+                // This test ensures that error messages are descriptive and helpful,
+                // supporting developer debugging and user experience when date
+                // operations fail due to invalid input or system errors.
+                const errorTestCases = [
+                    {
+                        fn: () => dateUtils.userInputToDatabase('invalid'),
+                        expectedPattern: /Invalid user input date.*Expected format/
+                    },
+                    {
+                        fn: () => dateUtils.databaseToUserInput('invalid'),
+                        expectedPattern: /Invalid database date format.*Expected ISO 8601/
+                    },
+                    {
+                        fn: () => dateUtils.convertTimezone('2024-01-15T10:00:00.000Z', 'Invalid/Zone'),
+                        expectedPattern: /Invalid timezone/
+                    },
+                    {
+                        fn: () => dateUtils.isBefore('invalid', '2024-01-15T10:00:00.000Z'),
+                        expectedPattern: /Invalid first date for comparison/
+                    },
+                    {
+                        fn: () => dateUtils.toUserDisplay('invalid'),
+                        expectedPattern: /Invalid date for display formatting/
+                    }
+                ];
+
+                errorTestCases.forEach(({ fn, expectedPattern }) => {
+                    expect(fn).toThrow(expectedPattern);
+                });
+            });
         });
     });
 });
