@@ -103,26 +103,53 @@ Comprehensive standardization of date handling across the entire application sta
 ### ⏳ Phase 2: Storage Layer Standardization (Issue #112) - READY TO START
 **Priority**: P0-Foundation 
 **Status**: ⏳ **READY TO START** (Issue #111 completed)
-**Goal**: Eliminate all direct Date usage in storage operations
+**Goal**: Eliminate all direct Date usage in storage operations and normalize database date format consistency
 
 #### 2.1 Update `src/lib/storage/blob.ts`
 **Target violations**:
 - Replace `new Date().toISOString()` with `dateUtils.now()`
 - Standardize `uploadedAt` timestamp generation
 - Use `dateUtils.toDatabase()` for date conversions
+- **CRITICAL**: Normalize database responses to use `Z` format (not `+00:00`)
+  - Database currently returns: `2023-04-15T00:00:00+00:00`
+  - Must normalize to: `2023-04-15T00:00:00.000Z`
+  - Apply `dateUtils.toDatabase()` to all retrieved dates for consistency
 
 #### 2.2 Update `src/lib/utils/metadata-validation.ts`
 **Target violations**:
 - Replace manual date creation with `dateUtils` functions
-- Use Luxon-based date validation
-- Standardize metadata timestamp handling
+- Use Luxon-based date validation through `dateUtils.isValidUserInput()`
+- Standardize metadata timestamp handling with type-safe utilities
 
-#### 2.3 Acceptance Criteria
+#### 2.3 Type Safety Integration
+**Leverage Issue #111's type safety mechanisms**:
+- Use `typedDateUtils` functions for compile-time safety
+- Apply branded types: `DatabaseDateString`, `UserInputDateString`, `DisplayDateString`
+- Replace loose string types with branded types in storage interfaces
+- Prevent date format mixing errors at compile time
+
+#### 2.4 Critical Test Case Fix
+**File**: `src/__tests__/lib/storage/retrieval.test.ts` **Line 82**
+**Current (incorrect)**:
+```typescript
+// Database returns +00:00 format instead of Z format
+expect(metadata.date).toBe('2023-04-15T00:00:00+00:00');
+```
+**After Issue #112 (correct)**:
+```typescript
+// dateUtils normalize all dates to Z format for consistency
+expect(metadata.date).toBe('2023-04-15T00:00:00.000Z');
+```
+
+#### 2.5 Acceptance Criteria
 - [ ] Zero direct Date object usage in storage layer
-- [ ] All timestamps generated through dateUtils
-- [ ] Database compatibility maintained
-- [ ] Storage tests updated and passing
+- [ ] All timestamps generated through dateUtils with proper error handling
+- [ ] **All database responses normalized to Z format** (critical for consistency)
+- [ ] Type-safe date operations using branded types throughout storage
+- [ ] Storage tests updated to expect standardized Z format
 - [ ] Property-based tests continue to work with new utilities
+- [ ] Test at retrieval.test.ts:82 passes with Z format expectation
+- [ ] Database compatibility maintained with round-trip consistency
 
 ### ⏳ Phase 3: API Layer Standardization (Issue #113) - BLOCKED
 **Priority**: P0-Foundation 
