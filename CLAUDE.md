@@ -73,6 +73,9 @@ claude/
 - **Remember to reference the @claude/rules/property-based-testing-guide.md rule when planning tests and engaging in TDD**
 - **Remember to check the @claude/rules/visual-testing-guide.md when planning tests or engaging in TDD**
 
+### Testing Best Practices
+- When writing unit tests, always reference the actual input data in the assertion instead of recreating logic or patterns emulating the input data. For example, `expect(actual.id).toMatch(input.id)`, not `expect(actual.id).toMatch(/some-regex-that-looks-like-input-id/)`
+
 ### Issue Management
 - **Detailed specifications** required for all GitHub issues
 - **Clear dependencies** and acceptance criteria
