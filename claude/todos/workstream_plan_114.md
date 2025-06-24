@@ -51,11 +51,19 @@ Eliminate all direct Date object usage in test files (11+ files identified) and 
 
 ## Work Breakdown
 
-### Phase 1: Test Utility Foundation (Estimated: 4-6 hours)
-- [ ] **Enhance Property-Based Date Generation** - src/__tests__/property-based/storage-properties.test.ts
+### Phase 1: Test Utility Foundation (Estimated: 6-8 hours)
+- [x] **Enhance Property-Based Date Generation** - src/__tests__/property-based/storage-properties.test.ts (COMPLETED 2025-06-24)
   - **Details:** Integrate dateUtils with Fast-Check for valid date generation
   - **Dependencies:** TestTranscriptStorage updates complete
   - **Definition of Done:** Property tests use dateUtils, maintain edge case discovery
+  - **Implementation:** Replaced direct Date usage with dateUtils.testDate(), enhanced Fast-Check generators for deterministic date generation, all 4 property-based tests passing
+
+- [ ] **Implement Shared Test Data Generator with Faker** - src/__tests__/utils/test-data-generator.ts
+  - **Details:** Create utility using Faker.js for consistent, realistic test data generation with override capabilities
+  - **Features:** Support for transcript data, speaker info, metadata with selective overrides
+  - **Dependencies:** Enhanced property-based date generation complete
+  - **Definition of Done:** Centralized test data creation, simplified test code focusing only on relevant data variations
+  - **API Example:** `generateTranscriptData({ title: 'Custom Title', speakerCount: 3 })` for focused test concerns
 
 ### Phase 2: Storage Test Standardization (Estimated: 8-10 hours)
 - [ ] **Listing Tests Date Updates** - src/__tests__/lib/storage/listing.test.ts
@@ -111,7 +119,7 @@ Eliminate all direct Date object usage in test files (11+ files identified) and 
   - **Definition of Done:** No significant performance degradation detected
 
 ## Effort Estimation
-- **Total Estimated Effort:** 18-25 hours (3-4 days focused development)
+- **Total Estimated Effort:** 20-27 hours (3-4 days focused development)
 - **Critical Path Duration:** 4 phases sequential (some parallelization possible within Phase 2)
 - **Parallelizable Work:** Storage test files can be updated concurrently after Phase 1
 - **Team Size Recommendation:** 1 developer (maintains consistency and context)
