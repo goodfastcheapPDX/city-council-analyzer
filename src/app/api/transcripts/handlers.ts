@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TranscriptStorage } from '@/lib/storage/blob';
+import { dateUtils } from '@/lib/config';
+import { randomUUID } from 'crypto';
 import { z } from 'zod';
 
 // Schema for transcript upload
@@ -62,7 +64,7 @@ export function createTranscriptHandlers() {
                 const { content, metadata } = validated.data;
 
                 // Generate sourceId if not provided
-                const sourceId = metadata.sourceId || `transcript_${Date.now()}`;
+                const sourceId = metadata.sourceId || `transcript_${randomUUID()}`;
 
                 // Upload transcript to blob storage
                 const result = await storage.uploadTranscript(content, {
