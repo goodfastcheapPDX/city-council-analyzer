@@ -3,6 +3,7 @@ import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 import { createTranscriptSourceIdHandlers } from '@/app/api/transcripts/[sourceId]/handlers';
 import { createStorageForTest } from '@/lib/storage/factories';
 import { TranscriptStorage } from '@/lib/storage/blob';
+import { randomUUID } from 'crypto';
 import dotenv from 'dotenv';
 
 describe('GET /api/transcripts/[sourceId]', () => {
@@ -11,7 +12,11 @@ describe('GET /api/transcripts/[sourceId]', () => {
     let testStorage: TranscriptStorage;
     let handlers: ReturnType<typeof createTranscriptSourceIdHandlers>;
     const testSourceIds: string[] = [];
-    let testCounter = 0;
+
+    // Helper function to generate sourceIds the same way as runtime code
+    function generateTestSourceId(): string {
+        return `transcript_${randomUUID()}`;
+    }
 
     beforeEach(async () => {
         // Create a realistic test storage instance
@@ -19,9 +24,6 @@ describe('GET /api/transcripts/[sourceId]', () => {
         
         // Create handlers instance
         handlers = createTranscriptSourceIdHandlers();
-        
-        // Use unique source IDs for each test to avoid conflicts
-        testCounter++;
     });
 
     afterEach(async () => {
@@ -41,7 +43,7 @@ describe('GET /api/transcripts/[sourceId]', () => {
         // the API, which is fundamental to the system's usability. If transcript
         // retrieval fails, users cannot view their uploaded content, breaking the
         // core value proposition of transcript storage and analysis.
-        const sourceId = `transcript1-${testCounter}`;
+        const sourceId = generateTestSourceId();
         
         // Set up test data with two versions
         await testStorage.uploadTranscript('This is version 1', {
@@ -84,7 +86,7 @@ describe('GET /api/transcripts/[sourceId]', () => {
         // allowing users to access historical versions of their transcripts.
         // This capability is crucial for comparing changes, reverting to previous
         // versions, and maintaining transcript evolution tracking.
-        const sourceId = `transcript1-${testCounter}`;
+        const sourceId = generateTestSourceId();
         
         // Set up test data with two versions
         await testStorage.uploadTranscript('This is version 1', {
@@ -122,7 +124,7 @@ describe('GET /api/transcripts/[sourceId]', () => {
     });
 
     test('lists all versions when requested', async () => {
-        const sourceId = `transcript1-${testCounter}`;
+        const sourceId = generateTestSourceId();
         
         // Set up test data with two versions
         await testStorage.uploadTranscript('This is version 1', {
@@ -187,7 +189,7 @@ describe('GET /api/transcripts/[sourceId]', () => {
     });
 
     test('should handle non-numeric version parameter by returning latest version', async () => {
-        const sourceId = `transcript1-${testCounter}`;
+        const sourceId = generateTestSourceId();
         
         // Set up test data
         await testStorage.uploadTranscript('This is version 1', {
@@ -226,7 +228,7 @@ describe('GET /api/transcripts/[sourceId]', () => {
             listVersions: async () => { throw new Error('Unexpected storage error'); }
         };
 
-        const sourceId = `transcript1-${testCounter}`;
+        const sourceId = generateTestSourceId();
         const request = new NextRequest(`http://localhost/api/transcripts/${sourceId}`);
         const response = await handlers.GET(request, {
             params: Promise.resolve({ sourceId })
@@ -239,36 +241,36 @@ describe('GET /api/transcripts/[sourceId]', () => {
         expect(data.error).toContain('Failed to fetch transcript');
     });
 
-    // Testing URL encoding/decoding with special characters
-    test('should retrieve transcript successfully when sourceId contains URL-encoded special characters', async () => {
-        // Add a transcript with special characters in ID (URL-safe for blob storage)
-        const specialSourceId = 'transcript-with-special-chars';
-        await testStorage.uploadTranscript('Special characters in ID', {
-            sourceId: specialSourceId,
-            title: 'Special Characters Test',
+    // Testing with UUID-generated sourceIds like runtime
+    test('should retrieve transcript successfully with realistic UUID-based sourceId', async () => {
+        // Test with realistic UUID-generated sourceId like runtime code
+        const sourceId = generateTestSourceId();
+        await testStorage.uploadTranscript('UUID-based sourceId test', {
+            sourceId,
+            title: 'UUID Test Transcript',
             date: '2024-01-17',
             speakers: ['Speaker 3'],
             format: 'json',
             processingStatus: 'pending',
             tags: ['test', 'special']
         });
-        testSourceIds.push(specialSourceId);
+        testSourceIds.push(sourceId);
 
-        const request = new NextRequest(`http://localhost/api/transcripts/${specialSourceId}`);
+        const request = new NextRequest(`http://localhost/api/transcripts/${sourceId}`);
         const response = await handlers.GET(request, {
-            params: Promise.resolve({ sourceId: specialSourceId })
+            params: Promise.resolve({ sourceId })
         }, testStorage as any);
 
         expect(response.status).toBe(200);
 
         const data = await response.json();
-        expect(data.metadata.sourceId).toBe(specialSourceId);
+        expect(data.metadata.sourceId).toBe(sourceId);
     });
 
     // Property-based edge case tests
     test('should retrieve transcript with multiple versions correctly', async () => {
         // Test version retrieval with realistic storage - versions are auto-incremented
-        const sourceId = `transcript1-${testCounter}`;
+        const sourceId = generateTestSourceId();
         
         // Set up test data with two versions
         await testStorage.uploadTranscript('This is version 1', {
