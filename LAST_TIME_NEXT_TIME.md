@@ -151,7 +151,7 @@ npm run dev
 - Added comprehensive todo tracking document for database isolation phases
 - All changes type-checked and committed successfully
 
-## Latest Session (2025-06-24) - TestTranscriptStorage Mock Removal Complete
+## Latest Session (2025-06-24) - Issue #115 Complete: TestTranscriptStorage Mock Removal + Testing Improvements
 ✅ **ISSUE #115 COMPLETE - Remove TestTranscriptStorage Mock Class**
 - **SOLUTION**: Successfully migrated from artificial mocks to realistic test environments
 - **SCOPE**: 1 test file migrated + 1 mock implementation file completely removed
@@ -169,10 +169,19 @@ npm run dev
 - **Phase 2**: Test Migration ✅ - Migrated `src/__tests__/api/transcripts/GET.test.ts` to realistic storage
 - **Phase 3**: Cleanup and Validation ✅ - Removed mock file, verified no regressions
 
+✅ **BONUS: Realistic UUID Generation Implementation**
+- **PROBLEM IDENTIFIED**: Tests used artificial incrementing counter (`transcript1-1`, `transcript1-2`) instead of runtime UUID generation
+- **SOLUTION**: Replaced with `randomUUID()` function matching exact runtime behavior
+- **RUNTIME CODE**: `const sourceId = metadata.sourceId || \`transcript_${randomUUID()}\`;` (handlers.ts:67)
+- **TEST CODE**: `function generateTestSourceId() { return \`transcript_${randomUUID()}\`; }` 
+- **RESULT**: Tests now generate `transcript_13f263e0-d57e-433b-9b0d-57123c119879` format like production
+- **BENEFIT**: True test isolation through actual randomness, production-like behavior
+
 ✅ **Documentation and Standards Updated**
 - **UPDATED**: `claude/rules/testing-strategy.md` to reference `createStorageForTest()`
 - **VERIFIED**: No remaining `TestTranscriptStorage` references in codebase
 - **TYPE-SAFE**: All TypeScript compilation passes clean
+- **WORKSTREAM COMPLETE**: Deleted `claude/todos/workstream_plan_115.md` - task fully implemented
 
 ### Date Standardization Progress Summary
 **Issue #111**: ✅ **COMPLETED** - dateUtils foundation with Luxon backing
