@@ -173,27 +173,95 @@ expect(metadata.date).toBe('2023-04-15T00:00:00.000Z');
 - [x] Test at retrieval.test.ts:82 passes with Z format expectation
 - [x] Database compatibility maintained with round-trip consistency
 
-### ⏳ Phase 3: API Layer Standardization (Issue #113) - BLOCKED
+### 🎯 Phase 3: API Layer Standardization (Issue #113) - IN PROGRESS
 **Priority**: P0-Foundation 
-**Status**: ⏳ **BLOCKED** (Depends on Issue #112 completion)
+**Status**: 🎯 **IN PROGRESS** (Issues #111 & #112 completed)
 **Goal**: Consistent date handling in all API operations
 
-#### 3.1 Update `src/app/api/transcripts/handlers.ts`
-**Target violations**:
-- Replace manual date formatting with dateUtils
-- Standardize API response date formats
-- Use dateUtils.now() for all timestamps
+#### 3.0 Scope Definition and Boundaries
 
-#### 3.2 Update `src/lib/utils/search-validation.ts`
-**Target violations**:
-- Date range validation using dateUtils
-- Consistent date parsing for search parameters
+**✅ IN SCOPE for Issue #113**:
+- Replace `Date.now()` in API handlers with `dateUtils.now()`
+- Standardize sourceId generation for consistency
+- Enhance Zod validation schemas to use `dateUtils.isValidUserInput()`
+- Ensure API response date formatting consistency
+- Add comprehensive TDD tests for API date handling
 
-#### 3.3 Acceptance Criteria
-- [ ] All API responses use consistent date formats
-- [ ] Date parsing uses dateUtils functions
-- [ ] API tests updated and passing
-- [ ] Error handling for invalid dates improved
+**❌ NOT IN SCOPE (Reserved for Future Issues)**:
+- **Issue #114**: Test files in `src/__tests__/` (12+ files with Date usage)
+- **Issue #116**: ESLint rules & TypeScript enforcement
+- Frontend components, database migrations, external API integrations
+
+#### 3.1 Specific Target: `src/app/api/transcripts/handlers.ts:65`
+**Current violation**:
+```typescript
+const sourceId = metadata.sourceId || `transcript_${Date.now()}`;
+```
+
+**Implementation phases**:
+1. **Phase 1**: TDD Setup (15 mins)
+   - Create failing test for sourceId generation with dateUtils
+   - Property-based test for sourceId edge cases
+   
+2. **Phase 2**: API Handler Standardization (10 mins)
+   - Replace `Date.now()` with `dateUtils.now()`
+   - Add timestamp validation and error handling
+   
+3. **Phase 3**: Extended Date Validation (15 mins)
+   - Enhance Zod schema to use `dateUtils.isValidUserInput()`
+   - Add response date formatting consistency
+   
+4. **Phase 4**: Test Validation (10 mins)
+   - Run comprehensive test suite
+   - Performance validation for date operations
+   
+5. **Phase 5**: Documentation & Cleanup (5 mins)
+   - Update API documentation
+   - Create todo tracking and update LAST_TIME_NEXT_TIME.md
+
+#### 3.2 Acceptance Criteria → Implementation Phase Mapping
+
+**AC1: "All API handlers use dateUtils instead of native Date"**
+→ **Phase 2**: Replace Date.now() in handlers.ts:65
+
+**AC2: "API responses return consistent date formats"**  
+→ **Phase 2 + Phase 3**: Response format consistency + validation
+
+**AC3: "Request validation uses centralized date utilities"**
+→ **Phase 3**: Update Zod schemas with dateUtils.isValidUserInput()
+
+**AC4: "100% test coverage for API date handling"**
+→ **Phase 1 + Phase 4**: TDD setup + comprehensive validation
+
+**AC5: "Zero direct Date usage in API layer"**
+→ **Phase 4**: Grep verification and automated validation
+
+#### 3.3 Git Workflow
+- **Single feature branch**: `feature/issue-113-api-date-standardization`
+- **Atomic commits**: Each phase gets descriptive commit
+- **Files to modify ONLY**:
+  1. `src/app/api/transcripts/handlers.ts` - Replace Date.now() usage
+  2. `src/__tests__/api/transcripts/sourceId-generation.test.ts` - NEW: TDD tests
+  3. `claude/todos/113-api-date-standardization.txt` - NEW: Progress tracking
+
+#### 3.4 Validation Commands
+```bash
+# Verify no direct Date usage in API layer
+rg "new Date\(|Date\." src/app/api/
+
+# Run API-specific tests
+npm run test -- src/__tests__/api/
+
+# Type check
+npm run typecheck
+```
+
+#### 3.5 Expected Outcomes
+- ✅ Zero direct `Date` usage in API layer (`src/app/api/` directory)
+- ✅ All API timestamps use standardized dateUtils
+- ✅ Consistent date formats across all API responses
+- ✅ Comprehensive test coverage for API date edge cases
+- ✅ Foundation ready for Issue #114 (test infrastructure)
 
 ### ⏳ Phase 4: Test Infrastructure Overhaul (Issue #114) - BLOCKED  
 **Priority**: P1-Processing 
