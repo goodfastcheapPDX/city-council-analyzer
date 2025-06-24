@@ -224,10 +224,9 @@ export class TranscriptStorage {
         }
 
         const content = await response.text();
-
+      
         // Convert Supabase record to TranscriptMetadata using normalized method
         const metadata = this.normalizeRecord(metadataRecord);
-
         return { content, metadata };
     }
 
