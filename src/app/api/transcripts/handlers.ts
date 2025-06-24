@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TranscriptStorage } from '@/lib/storage/blob';
 import { dateUtils } from '@/lib/config';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'crypto'; // Used for collision-free, URL-safe transcript ID generation
 import { z } from 'zod';
 
 // Schema for transcript upload
