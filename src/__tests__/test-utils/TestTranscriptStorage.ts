@@ -11,7 +11,7 @@ export class TestTranscriptStorage {
         url: string;
         blobKey: string;
         size: number;
-        uploadedAt: Date;
+        uploadedAt: string; // ISO string format
     }>> = new Map();
 
     /**
@@ -67,7 +67,7 @@ export class TestTranscriptStorage {
             url,
             blobKey,
             size: contentSize,
-            uploadedAt: new Date()
+            uploadedAt: fullMetadata.uploadedAt // Use the ISO string from metadata
         });
 
         return {
@@ -186,7 +186,7 @@ export class TestTranscriptStorage {
 
         // Sort by uploadedAt (newest first)
         latestVersions.sort((a, b) =>
-            b.uploadedAt.getTime() - a.uploadedAt.getTime()
+            new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
         );
 
         // Apply pagination
@@ -270,7 +270,7 @@ export class TestTranscriptStorage {
             url,
             blobKey,
             size: typeof content === 'string' ? new TextEncoder().encode(content).length : 0,
-            uploadedAt: new Date()
+            uploadedAt: metadata.uploadedAt // Use the ISO string from metadata
         });
     }
 

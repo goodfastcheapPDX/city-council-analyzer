@@ -95,7 +95,7 @@ describe.sequential('TranscriptStorage - Version Management', () => {
         expect(versionNumbers).toEqual([5, 4, 3, 2, 1]);
 
         // 3. Verify uploadedAt dates are consistent with version order
-        const uploadDates = versions.map(v => v.uploadedAt.getTime());
+        const uploadDates = versions.map(v => new Date(v.uploadedAt).getTime());
 
         // Each date should be >= the next one (newer or same timestamp)
         for (let i = 0; i < uploadDates.length - 1; i++) {
