@@ -17,7 +17,7 @@ export interface TranscriptMetadata {
     format: 'json' | 'text' | 'srt' | 'vtt';
     processingStatus: 'pending' | 'processed' | 'failed';
     uploadedAt: string;
-    processingCompletedAt?: string;
+    processingCompletedAt?: string | null;
     tags?: string[];
 }
 

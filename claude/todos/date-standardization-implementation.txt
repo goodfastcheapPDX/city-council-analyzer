@@ -100,10 +100,26 @@ Comprehensive standardization of date handling across the entire application sta
 - ✅ **Enhanced Error Handling**: Meaningful errors instead of silent failures
 - ✅ **Testing Excellence**: Property-based testing with proper noInvalidDate configuration
 
-### ⏳ Phase 2: Storage Layer Standardization (Issue #112) - READY TO START
+### ⏳ Phase 2: Storage Layer Standardization (Issue #112) - IN PROGRESS
 **Priority**: P0-Foundation 
-**Status**: ⏳ **READY TO START** (Issue #111 completed)
+**Status**: ⏳ **IN PROGRESS** (Issue #111 completed)
 **Goal**: Eliminate all direct Date usage in storage operations and normalize database date format consistency
+
+#### 2.0 Branching Strategy (Updated 2025-06-24)
+**Main Feature Branch**: `feature/issue-112-storage-date-standardization` (targets `main`)
+- Primary PR for complete Issue #112 implementation
+- All sub-branches merge here before final PR to main
+
+**Sub-task Branches** (targeting main feature branch):
+1. **`feature/issue-112-1-blob-storage-dates`** → Core blob storage date standardization
+2. **`feature/issue-112-2-metadata-validation-dates`** → Metadata validation updates  
+3. **`feature/issue-112-3-test-fixes-date-format`** → Test format consistency fixes
+
+**Implementation Workflow**:
+1. Create main feature branch from current `main`
+2. Create each sub-task branch from main feature branch
+3. Implement changes → PR to main feature branch
+4. Final PR: main feature branch → `main`
 
 #### 2.1 Update `src/lib/storage/blob.ts`
 **Target violations**:
