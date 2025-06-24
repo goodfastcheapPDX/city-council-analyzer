@@ -216,7 +216,7 @@ test("Sends email on registration", async () => {
 
 ### Storage Testing Requirements
 - Storage tests must run sequentially: use `--max-concurrency=1 --sequence.concurrent=false`
-- Use `TestTranscriptStorage` utility from `src/__tests__/test-utils/` for in-memory testing
+- Use `createStorageForTest()` factory from `src/lib/storage/factories` for realistic test storage
 - Test with realistic transcript data from multiple sources
 
 ### API Testing Requirements
