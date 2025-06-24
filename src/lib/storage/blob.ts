@@ -55,7 +55,7 @@ export interface TranscriptBlobListItem {
     url: string;
     blobKey: string;
     metadata: TranscriptMetadata;
-    uploadedAt: Date;
+    uploadedAt: string; // ISO string format
     size: number;
 }
 
@@ -290,7 +290,7 @@ export class TranscriptStorage {
             url: record.url,
             blobKey: record.blob_key,
             metadata: this.normalizeRecord(record),
-            uploadedAt: new Date(dateUtils.toDatabase(record.uploaded_at)),
+            uploadedAt: record.uploaded_at, // Already in ISO format from database
             size: record.size || 0
         }));
     }
@@ -337,7 +337,7 @@ export class TranscriptStorage {
                 url: record.url,
                 blobKey: record.blob_key,
                 metadata: this.normalizeRecord(record),
-                uploadedAt: new Date(dateUtils.toDatabase(record.uploaded_at)),
+                uploadedAt: record.uploaded_at, // Already in ISO format from database
                 size: record.size || 0
             })),
             total: count || 0
@@ -415,7 +415,7 @@ export class TranscriptStorage {
                 url: record.url,
                 blobKey: record.blob_key,
                 metadata: this.normalizeRecord(record),
-                uploadedAt: new Date(dateUtils.toDatabase(record.uploaded_at)),
+                uploadedAt: record.uploaded_at, // Already in ISO format from database
                 size: record.size || 0
             })),
             total: count || 0
