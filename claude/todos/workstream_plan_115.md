@@ -11,7 +11,6 @@ git checkout main && git pull origin main && git checkout -b refactor/115-remove
 ## Issue Overview
 **Title:** Remove TestTranscriptStorage mock class - violates testing principles
 **Priority:** P1-Processing
-**Assignee:** Unassigned
 **Issue URL:** https://github.com/goodfastcheapPDX/city-council-analyzer/issues/115
 
 ### Requirements Summary
@@ -48,15 +47,20 @@ Remove the `TestTranscriptStorage.ts` mock class that violates the project's tes
 ## Work Breakdown
 
 ### Phase 1: Discovery and Analysis (Estimated: 2 hours)
-- [ ] **Find all TestTranscriptStorage usage** - Search codebase for imports and references
+- [x] **Find all TestTranscriptStorage usage** - Search codebase for imports and references ✅ (2025-06-24)
   - **Details:** Use `grep -r "TestTranscriptStorage" src/__tests__/` to find all usage
   - **Dependencies:** None
   - **Definition of Done:** Complete list of affected test files documented
+  - **Results:** Found 1 test file using TestTranscriptStorage: `src/__tests__/api/transcripts/GET.test.ts`
+  - **Documentation References:** `claude/rules/testing-strategy.md` and `claude/todos/date-standardization-implementation.txt`
 
-- [ ] **Analyze createStorageForTest() factory** - Understand replacement pattern
+- [x] **Analyze createStorageForTest() factory** - Understand replacement pattern ✅ (2025-06-24)
   - **Details:** Review existing factory implementation and usage patterns
   - **Dependencies:** None
   - **Definition of Done:** Clear understanding of how to replace mock usage
+  - **Analysis:** Factory creates real TranscriptStorage with test database, path prefix isolation, and safety checks
+  - **Key Differences:** Real async operations vs mock Map, proper error handling, actual blob storage integration
+  - **Usage Pattern:** Replace `new TestTranscriptStorage()` with `createStorageForTest()` and convert sync to async calls
 
 ### Phase 2: Test Migration (Estimated: 4 hours)
 - [ ] **Update affected test files** - Replace mock imports with factory
