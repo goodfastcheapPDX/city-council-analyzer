@@ -3,7 +3,7 @@
  * Extracted from TranscriptStorage and API handlers to enable fast property-based testing
  */
 
-import { dateUtils } from '@/lib/config';
+import { dateUtils, typedDateUtils } from '@/lib/config';
 
 /**
  * Transcript metadata interface matching the system requirements
@@ -89,7 +89,7 @@ export function validateRequiredFields(metadata: any): RequiredFieldsResult {
  * @returns Complete metadata with defaults applied
  */
 export function normalizeMetadata(metadata: Partial<TranscriptMetadata>): TranscriptMetadata {
-    const now = dateUtils.now();
+    const now = typedDateUtils.now();
     
     return {
         sourceId: metadata.sourceId || '',
@@ -100,7 +100,7 @@ export function normalizeMetadata(metadata: Partial<TranscriptMetadata>): Transc
         format: metadata.format || 'json',
         processingStatus: metadata.processingStatus || 'pending',
         uploadedAt: metadata.uploadedAt || now,
-        processingCompletedAt: metadata.processingCompletedAt,
+        processingCompletedAt: metadata.processingCompletedAt || null,
         tags: Array.isArray(metadata.tags) ? metadata.tags : []
     };
 }
@@ -128,7 +128,7 @@ export function validateTranscriptMetadata(metadata: any): MetadataValidationRes
         };
     }
     
-    // Validate date format using standardized date utilities
+    // Validate date format using standardized date utilities with type safety
     if (metadata.date && typeof metadata.date === 'string') {
         if (!dateUtils.isValidUserInput(metadata.date)) {
             errors.push('Invalid date format: must be YYYY-MM-DD');
