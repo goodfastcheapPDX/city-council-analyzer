@@ -2,6 +2,7 @@ import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 import * as fc from 'fast-check';
 import { TranscriptStorage, TranscriptMetadata } from '@/lib/storage/blob';
 import { createStorageForTest } from '@/lib/storage/factories';
+import { dateUtils } from '@/lib/config';
 import dotenv from 'dotenv';
 
 dotenv.config({ path: '.env.test' });
@@ -49,7 +50,7 @@ describe.sequential('Storage Operations - Property-Based Tests', () => {
                         const metadata: Omit<TranscriptMetadata, 'uploadedAt' | 'version'> = {
                             sourceId,
                             title: `Test Transcript ${sourceId}`,
-                            date: '2024-01-15',
+                            date: dateUtils.databaseToUserInput(dateUtils.testDate('2024-01-15T10:30:00.000Z')),
                             speakers: ['Speaker 1'],
                             format: 'json',
                             processingStatus: 'pending',
@@ -101,7 +102,7 @@ describe.sequential('Storage Operations - Property-Based Tests', () => {
                         const metadata: Omit<TranscriptMetadata, 'uploadedAt' | 'version'> = {
                             sourceId,
                             title: `Latest Version Test ${sourceId}`,
-                            date: '2024-01-15',
+                            date: dateUtils.databaseToUserInput(dateUtils.testDate('2024-01-15T10:30:00.000Z')),
                             speakers: ['Speaker 1'],
                             format: 'text',
                             processingStatus: 'pending'
@@ -146,7 +147,7 @@ describe.sequential('Storage Operations - Property-Based Tests', () => {
                         const metadata: Omit<TranscriptMetadata, 'uploadedAt' | 'version'> = {
                             sourceId,
                             title: `Content Integrity Test`,
-                            date: '2024-01-15',
+                            date: dateUtils.databaseToUserInput(dateUtils.testDate('2024-01-15T10:30:00.000Z')),
                             speakers: ['Test Speaker'],
                             format: 'text',
                             processingStatus: 'pending'
@@ -178,9 +179,20 @@ describe.sequential('Storage Operations - Property-Based Tests', () => {
                 fc.asyncProperty(
                     fc.string({ minLength: 1, maxLength: 50 }).filter(s => s.trim().length > 0),
                     fc.string({ minLength: 1, maxLength: 200 }),
-                    fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') })
-                        .filter(d => !isNaN(d.getTime())) // Filter out invalid dates
-                        .map(d => d.toISOString().split('T')[0]), // Convert to YYYY-MM-DD format
+                    fc.record({
+                        year: fc.integer({ min: 2020, max: 2025 }),
+                        month: fc.integer({ min: 1, max: 12 }),
+                        day: fc.integer({ min: 1, max: 28 }) // Use 28 to avoid month boundary issues
+                    }).map(({ year, month, day }) => {
+                        // Generate valid dates using Fast-Check generators and dateUtils validation
+                        const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                        // Validate using dateUtils to ensure consistency
+                        if (!dateUtils.isValidUserInput(dateStr)) {
+                            // Fallback to a known valid date if generated date is invalid
+                            return '2024-01-15';
+                        }
+                        return dateStr;
+                    }),
                     fc.array(fc.string({ minLength: 1, maxLength: 100 }), { minLength: 1, maxLength: 10 }),
                     fc.oneof(fc.constant('json'), fc.constant('text'), fc.constant('srt'), fc.constant('vtt')),
                     fc.oneof(fc.constant('pending'), fc.constant('processed'), fc.constant('failed')),
@@ -212,10 +224,10 @@ describe.sequential('Storage Operations - Property-Based Tests', () => {
 
                         expect(typeof retrieved.metadata.date).toBe('string');
                         // Date input is in YYYY-MM-DD format, database stores as full timestamp
-                        // Compare the date part extracted from database result with original input
-                        const dbDate = new Date(retrieved.metadata.date);
-                        const inputDate = new Date(date + 'T00:00:00.000Z');
-                        expect(dbDate.getTime()).toBe(inputDate.getTime());
+                        // Compare using dateUtils for consistent date handling
+                        const expectedDbFormat = dateUtils.userInputToDatabase(date);
+                        // The stored date should match our standardized database format
+                        expect(retrieved.metadata.date).toBe(expectedDbFormat);
                         
                         expect(Array.isArray(retrieved.metadata.speakers)).toBe(true);
                         expect(retrieved.metadata.speakers).toEqual(speakers);
