@@ -77,9 +77,9 @@ describe.sequential('TranscriptStorage - Retrieval Functionality', () => {
         // 3. Verify complete metadata
         const metadata = result.metadata;
         expect(metadata.title).toBe(baseMetadata.title);
-        // Database converts user input date to full ISO timestamp with timezone
-        // Note: Database returns +00:00 format instead of Z format
-        expect(metadata.date).toBe('2023-04-15T00:00:00+00:00');
+        // Database responses are normalized to standardized Z format via dateUtils.toDatabase()
+        // Issue #112: All dates now consistently use Z format for system-wide compatibility
+        expect(metadata.date).toBe('2023-04-15T00:00:00.000Z');
         expect(metadata.speakers).toEqual(baseMetadata.speakers);
         expect(metadata.format).toBe(baseMetadata.format);
         expect(metadata.processingStatus).toBe('processed');
