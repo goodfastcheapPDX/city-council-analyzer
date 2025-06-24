@@ -20,7 +20,7 @@ import {
     normalizeMetadata,
     type MetadataValidationResult
 } from '@/lib/utils/metadata-validation';
-import { dateUtils } from '@/lib/config';
+import { dateUtils, typedDateUtils } from '@/lib/config';
 
 
 /**
@@ -35,7 +35,7 @@ export interface TranscriptMetadata {
     format: 'json' | 'text' | 'srt' | 'vtt';
     processingStatus: 'pending' | 'processed' | 'failed';
     uploadedAt: string;
-    processingCompletedAt?: string;
+    processingCompletedAt?: string | null;
     tags?: string[];
 }
 
@@ -55,7 +55,7 @@ export interface TranscriptBlobListItem {
     url: string;
     blobKey: string;
     metadata: TranscriptMetadata;
-    uploadedAt: Date;
+    uploadedAt: string; // ISO string format
     size: number;
 }
 
@@ -224,21 +224,9 @@ export class TranscriptStorage {
         }
 
         const content = await response.text();
-
-        // Convert Supabase record to TranscriptMetadata
-        const metadata: TranscriptMetadata = {
-            sourceId: metadataRecord.source_id,
-            title: metadataRecord.title,
-            date: metadataRecord.date,
-            speakers: metadataRecord.speakers || [], // Ensure speakers is always an array
-            version: metadataRecord.version,
-            format: metadataRecord.format,
-            processingStatus: metadataRecord.processing_status,
-            uploadedAt: metadataRecord.uploaded_at,
-            processingCompletedAt: metadataRecord.processing_completed_at,
-            tags: metadataRecord.tags
-        };
-
+      
+        // Convert Supabase record to TranscriptMetadata using normalized method
+        const metadata = this.normalizeRecord(metadataRecord);
         return { content, metadata };
     }
 
@@ -273,19 +261,8 @@ export class TranscriptStorage {
             throw new Error(`Failed to update transcript status: ${error?.message || 'Record not found'}`);
         }
 
-        // Convert Supabase record to TranscriptMetadata
-        return {
-            sourceId: data.source_id,
-            title: data.title,
-            date: data.date,
-            speakers: data.speakers,
-            version: data.version,
-            format: data.format,
-            processingStatus: data.processing_status,
-            uploadedAt: data.uploaded_at,
-            processingCompletedAt: data.processing_completed_at,
-            tags: data.tags
-        };
+        // Convert Supabase record to TranscriptMetadata using normalized method
+        return this.normalizeRecord(data);
     }
 
     /**
@@ -312,19 +289,8 @@ export class TranscriptStorage {
         return data.map(record => ({
             url: record.url,
             blobKey: record.blob_key,
-            metadata: {
-                sourceId: record.source_id,
-                title: record.title,
-                date: record.date,
-                speakers: record.speakers,
-                version: record.version,
-                format: record.format,
-                processingStatus: record.processing_status,
-                uploadedAt: record.uploaded_at,
-                processingCompletedAt: record.processing_completed_at,
-                tags: record.tags
-            },
-            uploadedAt: new Date(record.uploaded_at),
+            metadata: this.normalizeRecord(record),
+            uploadedAt: record.uploaded_at, // Already in ISO format from database
             size: record.size || 0
         }));
     }
@@ -370,19 +336,8 @@ export class TranscriptStorage {
             items: data.map(record => ({
                 url: record.url,
                 blobKey: record.blob_key,
-                metadata: {
-                    sourceId: record.source_id,
-                    title: record.title,
-                    date: record.date,
-                    speakers: record.speakers,
-                    version: record.version,
-                    format: record.format,
-                    processingStatus: record.processing_status,
-                    uploadedAt: record.uploaded_at,
-                    processingCompletedAt: record.processing_completed_at,
-                    tags: record.tags
-                },
-                uploadedAt: new Date(record.uploaded_at),
+                metadata: this.normalizeRecord(record),
+                uploadedAt: record.uploaded_at, // Already in ISO format from database
                 size: record.size || 0
             })),
             total: count || 0
@@ -459,19 +414,8 @@ export class TranscriptStorage {
             items: data.map(record => ({
                 url: record.url,
                 blobKey: record.blob_key,
-                metadata: {
-                    sourceId: record.source_id,
-                    title: record.title,
-                    date: record.date,
-                    speakers: record.speakers,
-                    version: record.version,
-                    format: record.format,
-                    processingStatus: record.processing_status,
-                    uploadedAt: record.uploaded_at,
-                    processingCompletedAt: record.processing_completed_at,
-                    tags: record.tags
-                },
-                uploadedAt: new Date(record.uploaded_at),
+                metadata: this.normalizeRecord(record),
+                uploadedAt: record.uploaded_at, // Already in ISO format from database
                 size: record.size || 0
             })),
             total: count || 0
@@ -548,6 +492,26 @@ export class TranscriptStorage {
         if (deleteError) {
             throw new Error(`Failed to delete transcript metadata: ${deleteError.message}`);
         }
+    }
+
+    /**
+     * Normalizes a database record to TranscriptMetadata format
+     * @param record Raw database record
+     * @returns Normalized TranscriptMetadata object
+     */
+    private normalizeRecord(record: any): TranscriptMetadata {
+        return {
+            sourceId: record.source_id,
+            title: record.title,
+            date: dateUtils.toDatabase(record.date),
+            speakers: record.speakers || [], // Ensure speakers is always an array
+            version: record.version,
+            format: record.format,
+            processingStatus: record.processing_status,
+            uploadedAt: dateUtils.toDatabase(record.uploaded_at),
+            processingCompletedAt: record.processing_completed_at ? dateUtils.toDatabase(record.processing_completed_at) : null,
+            tags: record.tags
+        };
     }
 
     /**
