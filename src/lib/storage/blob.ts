@@ -20,7 +20,7 @@ import {
     normalizeMetadata,
     type MetadataValidationResult
 } from '@/lib/utils/metadata-validation';
-import { dateUtils } from '@/lib/config';
+import { dateUtils, typedDateUtils } from '@/lib/config';
 
 
 /**
@@ -35,7 +35,7 @@ export interface TranscriptMetadata {
     format: 'json' | 'text' | 'srt' | 'vtt';
     processingStatus: 'pending' | 'processed' | 'failed';
     uploadedAt: string;
-    processingCompletedAt?: string;
+    processingCompletedAt?: string | null;
     tags?: string[];
 }
 
@@ -225,17 +225,17 @@ export class TranscriptStorage {
 
         const content = await response.text();
 
-        // Convert Supabase record to TranscriptMetadata
+        // Convert Supabase record to TranscriptMetadata with normalized date formats
         const metadata: TranscriptMetadata = {
             sourceId: metadataRecord.source_id,
             title: metadataRecord.title,
-            date: metadataRecord.date,
+            date: dateUtils.toDatabase(metadataRecord.date),
             speakers: metadataRecord.speakers || [], // Ensure speakers is always an array
             version: metadataRecord.version,
             format: metadataRecord.format,
             processingStatus: metadataRecord.processing_status,
-            uploadedAt: metadataRecord.uploaded_at,
-            processingCompletedAt: metadataRecord.processing_completed_at,
+            uploadedAt: dateUtils.toDatabase(metadataRecord.uploaded_at),
+            processingCompletedAt: metadataRecord.processing_completed_at ? dateUtils.toDatabase(metadataRecord.processing_completed_at) : null,
             tags: metadataRecord.tags
         };
 
@@ -273,17 +273,17 @@ export class TranscriptStorage {
             throw new Error(`Failed to update transcript status: ${error?.message || 'Record not found'}`);
         }
 
-        // Convert Supabase record to TranscriptMetadata
+        // Convert Supabase record to TranscriptMetadata with normalized date formats
         return {
             sourceId: data.source_id,
             title: data.title,
-            date: data.date,
+            date: dateUtils.toDatabase(data.date),
             speakers: data.speakers,
             version: data.version,
             format: data.format,
             processingStatus: data.processing_status,
-            uploadedAt: data.uploaded_at,
-            processingCompletedAt: data.processing_completed_at,
+            uploadedAt: dateUtils.toDatabase(data.uploaded_at),
+            processingCompletedAt: data.processing_completed_at ? dateUtils.toDatabase(data.processing_completed_at) : null,
             tags: data.tags
         };
     }
@@ -315,16 +315,16 @@ export class TranscriptStorage {
             metadata: {
                 sourceId: record.source_id,
                 title: record.title,
-                date: record.date,
+                date: dateUtils.toDatabase(record.date),
                 speakers: record.speakers,
                 version: record.version,
                 format: record.format,
                 processingStatus: record.processing_status,
-                uploadedAt: record.uploaded_at,
-                processingCompletedAt: record.processing_completed_at,
+                uploadedAt: dateUtils.toDatabase(record.uploaded_at),
+                processingCompletedAt: record.processing_completed_at ? dateUtils.toDatabase(record.processing_completed_at) : null,
                 tags: record.tags
             },
-            uploadedAt: new Date(record.uploaded_at),
+            uploadedAt: new Date(dateUtils.toDatabase(record.uploaded_at)),
             size: record.size || 0
         }));
     }
@@ -373,16 +373,16 @@ export class TranscriptStorage {
                 metadata: {
                     sourceId: record.source_id,
                     title: record.title,
-                    date: record.date,
+                    date: dateUtils.toDatabase(record.date),
                     speakers: record.speakers,
                     version: record.version,
                     format: record.format,
                     processingStatus: record.processing_status,
-                    uploadedAt: record.uploaded_at,
-                    processingCompletedAt: record.processing_completed_at,
+                    uploadedAt: dateUtils.toDatabase(record.uploaded_at),
+                    processingCompletedAt: record.processing_completed_at ? dateUtils.toDatabase(record.processing_completed_at) : null,
                     tags: record.tags
                 },
-                uploadedAt: new Date(record.uploaded_at),
+                uploadedAt: new Date(dateUtils.toDatabase(record.uploaded_at)),
                 size: record.size || 0
             })),
             total: count || 0
@@ -462,16 +462,16 @@ export class TranscriptStorage {
                 metadata: {
                     sourceId: record.source_id,
                     title: record.title,
-                    date: record.date,
+                    date: dateUtils.toDatabase(record.date),
                     speakers: record.speakers,
                     version: record.version,
                     format: record.format,
                     processingStatus: record.processing_status,
-                    uploadedAt: record.uploaded_at,
-                    processingCompletedAt: record.processing_completed_at,
+                    uploadedAt: dateUtils.toDatabase(record.uploaded_at),
+                    processingCompletedAt: record.processing_completed_at ? dateUtils.toDatabase(record.processing_completed_at) : null,
                     tags: record.tags
                 },
-                uploadedAt: new Date(record.uploaded_at),
+                uploadedAt: new Date(dateUtils.toDatabase(record.uploaded_at)),
                 size: record.size || 0
             })),
             total: count || 0
