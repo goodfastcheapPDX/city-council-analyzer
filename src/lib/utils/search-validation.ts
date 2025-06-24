@@ -3,6 +3,8 @@
  * Extracted from TranscriptStorage to enable fast property-based testing
  */
 
+import { dateUtils } from '@/lib/config';
+
 /**
  * Search query interface matching TranscriptStorage.searchTranscripts parameters
  */
@@ -64,7 +66,7 @@ export function validateSearchParams(query: SearchQuery): ValidationResult {
     
     // Validate status enum
     if (query.status && !['pending', 'processed', 'failed'].includes(query.status)) {
-        errors.push('Invalid status value. Status must be one of: pending, processed, failed');
+        errors.push(`Invalid status value '${query.status}'. Status must be one of: pending, processed, failed`);
     }
     
     // Validate date range
@@ -95,24 +97,21 @@ export function validateDateRange(
     // Validate dateFrom format
     if (dateFrom !== undefined) {
         if (!isValidISODate(dateFrom)) {
-            errors.push('dateFrom must be a valid ISO date (YYYY-MM-DD)');
+            errors.push(`dateFrom '${dateFrom}' must be a valid ISO date (YYYY-MM-DD format). Example: 2023-01-15`);
         }
     }
     
     // Validate dateTo format
     if (dateTo !== undefined) {
         if (!isValidISODate(dateTo)) {
-            errors.push('dateTo must be a valid ISO date (YYYY-MM-DD)');
+            errors.push(`dateTo '${dateTo}' must be a valid ISO date (YYYY-MM-DD format). Example: 2023-12-31`);
         }
     }
     
     // Validate date range logic (only if both dates are valid)
     if (dateFrom && dateTo && isValidISODate(dateFrom) && isValidISODate(dateTo)) {
-        const fromDate = new Date(dateFrom);
-        const toDate = new Date(dateTo);
-        
-        if (fromDate > toDate) {
-            errors.push('dateFrom must be before or equal to dateTo in date range');
+        if (dateUtils.isAfter(dateFrom, dateTo)) {
+            errors.push(`Invalid date range: dateFrom '${dateFrom}' must be before or equal to dateTo '${dateTo}'. Please ensure the start date comes before the end date.`);
         }
     }
     
@@ -194,7 +193,12 @@ function isValidISODate(dateString: string): boolean {
         return false;
     }
     
-    // Check if it's a valid parseable date
-    const date = new Date(dateString);
-    return !isNaN(date.getTime()) && date.toISOString().startsWith(dateString);
+    // Check if it's a valid parseable date using dateUtils
+    try {
+        const normalizedDate = dateUtils.userInputToDatabase(dateString);
+        // Verify that the normalized date starts with the input date (same day)
+        return normalizedDate.startsWith(dateString);
+    } catch {
+        return false;
+    }
 }
