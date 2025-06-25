@@ -15,6 +15,12 @@ import {
     normalizeMetadata,
     type MetadataValidationResult
 } from '@/lib/utils/metadata-validation';
+import { 
+    AppError,
+    NotFoundError,
+    ValidationError,
+    ServiceUnavailableError
+} from '@/lib/utils/errors';
 import { dateUtils, typedDateUtils, config } from '@/lib/config';
 
 
@@ -55,6 +61,101 @@ export interface TranscriptBlobListItem {
 }
 
 /**
+ * Maps Supabase Storage errors to standardized AppError types
+ * @param error Supabase Storage error object
+ * @param context Additional context for error message
+ * @returns Standardized AppError instance
+ */
+function handleStorageError(error: any, context: string): never {
+    // Handle common Supabase Storage error patterns
+    if (error?.message) {
+        const errorMessage = error.message.toLowerCase();
+        
+        // File not found errors
+        if (errorMessage.includes('not found') || errorMessage.includes('does not exist')) {
+            throw new NotFoundError(
+                `Storage resource not found: ${context}`,
+                { originalError: error.message }
+            );
+        }
+        
+        // Permission/authorization errors
+        if (errorMessage.includes('unauthorized') || errorMessage.includes('forbidden')) {
+            throw new ServiceUnavailableError(
+                `Storage operation unauthorized: ${context}`,
+                { originalError: error.message }
+            );
+        }
+        
+        // Quota/limit errors
+        if (errorMessage.includes('quota') || errorMessage.includes('limit') || errorMessage.includes('too large')) {
+            throw new ValidationError(
+                `Storage limit exceeded: ${context}`,
+                { originalError: error.message }
+            );
+        }
+        
+        // Network/service errors
+        if (errorMessage.includes('network') || errorMessage.includes('timeout') || errorMessage.includes('connection')) {
+            throw new ServiceUnavailableError(
+                `Storage service unavailable: ${context}`,
+                { originalError: error.message }
+            );
+        }
+    }
+    
+    // Generic storage error for unmatched cases
+    throw new AppError(
+        `Storage operation failed: ${context}`,
+        500,
+        { originalError: error?.message || 'Unknown storage error' }
+    );
+}
+
+/**
+ * Maps Supabase Database errors to standardized AppError types
+ * @param error Supabase Database error object
+ * @param context Additional context for error message
+ * @returns Standardized AppError instance
+ */
+function handleDatabaseError(error: any, context: string): never {
+    if (error?.message) {
+        const errorMessage = error.message.toLowerCase();
+        
+        // Record not found errors
+        if (errorMessage.includes('no rows') || errorMessage.includes('not found')) {
+            throw new NotFoundError(
+                `Database record not found: ${context}`,
+                { originalError: error.message }
+            );
+        }
+        
+        // Constraint violation errors
+        if (errorMessage.includes('duplicate') || errorMessage.includes('unique') || errorMessage.includes('constraint')) {
+            throw new ValidationError(
+                `Database constraint violation: ${context}`,
+                { originalError: error.message }
+            );
+        }
+        
+        // Permission errors
+        if (errorMessage.includes('permission') || errorMessage.includes('denied')) {
+            throw new ServiceUnavailableError(
+                `Database operation unauthorized: ${context}`,
+                { originalError: error.message }
+            );
+        }
+    }
+    
+    // Generic database error for unmatched cases
+    throw new AppError(
+        `Database operation failed: ${context}`,
+        500,
+        { originalError: error?.message || 'Unknown database error' }
+    );
+}
+
+/**
  * Class handling Vercel Blob storage operations for transcripts with Supabase metadata storage
  */
 export class TranscriptStorage {
@@ -83,7 +184,7 @@ export class TranscriptStorage {
         const { error } = await this.supabase.rpc('initialize_transcript_tables');
 
         if (error) {
-            throw new Error(`Failed to initialize transcript tables: ${error.message}`);
+            handleDatabaseError(error, 'transcript table initialization');
         }
     }
 
@@ -100,7 +201,10 @@ export class TranscriptStorage {
         // Validate metadata using utility functions
         const validation = validateTranscriptMetadata(metadata);
         if (!validation.isValid) {
-            throw new Error(`Invalid metadata: ${validation.errors.join(', ')}`);
+            throw new ValidationError(
+                'Invalid transcript metadata provided',
+                { validationErrors: validation.errors }
+            );
         }
 
         // Get the latest version if this sourceId already exists
@@ -130,7 +234,7 @@ export class TranscriptStorage {
             });
 
         if (uploadError) {
-            throw new Error(`Failed to upload transcript: ${uploadError.message}`);
+            handleStorageError(uploadError, `upload transcript for sourceId=${metadata.sourceId}`);
         }
 
         // Get the public URL for the uploaded file
@@ -180,7 +284,7 @@ export class TranscriptStorage {
             await this.supabase.storage
                 .from(config.storage.bucketName)
                 .remove([result.pathname]);
-            throw new Error(`Failed to store transcript metadata: ${error.message}`);
+            handleDatabaseError(error, `store metadata for sourceId=${fullMetadata.sourceId} version=${fullMetadata.version}`);
         }
 
         return {
@@ -212,11 +316,11 @@ export class TranscriptStorage {
         const { data, error } = await query;
 
         if (error) {
-            throw new Error(`Failed to query transcript metadata: ${error.message}`);
+            handleDatabaseError(error, `query metadata for sourceId=${sourceId}${version ? ` version=${version}` : ''}`);
         }
 
         if (!data || data.length === 0) {
-            throw new Error(`Transcript with sourceId ${sourceId}${version ? ` and version ${version}` : ''} not found`);
+            throw new NotFoundError(`Transcript with sourceId ${sourceId}${version ? ` and version ${version}` : ''} not found`);
         }
 
         const metadataRecord = data[0];
@@ -228,11 +332,11 @@ export class TranscriptStorage {
             .download(blobKey);
 
         if (downloadError) {
-            throw new Error(`Transcript blob not found: ${blobKey} - ${downloadError.message}`);
+            handleStorageError(downloadError, `download transcript blob with key=${blobKey}`);
         }
 
         if (!fileData) {
-            throw new Error(`No file data returned for blob: ${blobKey}`);
+            throw new NotFoundError(`No file data returned for blob: ${blobKey}`);
         }
 
         const content = await fileData.text();
@@ -269,8 +373,12 @@ export class TranscriptStorage {
             .select()
             .single();
 
-        if (error || !data) {
-            throw new Error(`Failed to update transcript status: ${error?.message || 'Record not found'}`);
+        if (error) {
+            handleDatabaseError(error, `update processing status for sourceId=${sourceId} version=${version}`);
+        }
+        
+        if (!data) {
+            throw new NotFoundError(`Transcript with sourceId ${sourceId} version ${version} not found for status update`);
         }
 
         // Convert Supabase record to TranscriptMetadata using normalized method
@@ -291,7 +399,7 @@ export class TranscriptStorage {
 
         console.log(data)
         if (error) {
-            throw new Error(`Failed to list transcript versions: ${error.message}`);
+            handleDatabaseError(error, `list versions for sourceId=${sourceId}`);
         }
 
         if (!data || data.length === 0) {
@@ -323,7 +431,7 @@ export class TranscriptStorage {
         // Validate parameters
         const validation = validatePaginationParams(normalizedParams.limit, normalizedParams.offset);
         if (!validation.isValid) {
-            throw new Error(`Invalid pagination parameters: ${validation.errors.join(', ')}`);
+            throw new ValidationError(`Invalid pagination parameters: ${validation.errors.join(', ')}`);
         }
         
         // Calculate Supabase range bounds
@@ -337,7 +445,7 @@ export class TranscriptStorage {
             .range(from, to)
 
         if (error) {
-            throw new Error(`Failed to list transcripts: ${error.message}`);
+            handleDatabaseError(error, `list transcripts with limit=${normalizedParams.limit} offset=${normalizedParams.offset}`);
         }
 
         if (!data) {
@@ -368,7 +476,7 @@ export class TranscriptStorage {
         // Validate search parameters
         const validation = validateSearchParams(query);
         if (!validation.isValid) {
-            throw new Error(`Invalid search parameters: ${validation.errors.join(', ')}`);
+            throw new ValidationError(`Invalid search parameters: ${validation.errors.join(', ')}`);
         }
         
         // Build filters from validated query
@@ -415,7 +523,7 @@ export class TranscriptStorage {
         const { data, error, count } = await supabaseQuery;
 
         if (error) {
-            throw new Error(`Failed to search transcripts: ${error.message}`);
+            handleDatabaseError(error, `search transcripts with query=${JSON.stringify(query)}`);
         }
 
         if (!data) {
@@ -449,8 +557,12 @@ export class TranscriptStorage {
             .eq('version', version)
             .single();
 
-        if (error || !data) {
-            throw new Error(`Transcript version not found: ${error?.message || 'Record not found'}`);
+        if (error) {
+            handleDatabaseError(error, `find transcript for deletion sourceId=${sourceId} version=${version}`);
+        }
+        
+        if (!data) {
+            throw new NotFoundError(`Transcript version not found: sourceId=${sourceId} version=${version}`);
         }
 
         const blobKey = data.blob_key;
@@ -461,7 +573,7 @@ export class TranscriptStorage {
             .remove([blobKey]);
 
         if (storageError) {
-            throw new Error(`Failed to delete transcript blob: ${storageError.message}`);
+            handleStorageError(storageError, `delete transcript blob with key=${blobKey}`);
         }
 
         // Delete from Supabase
@@ -472,7 +584,7 @@ export class TranscriptStorage {
             .eq('version', version);
 
         if (deleteError) {
-            throw new Error(`Failed to delete transcript metadata: ${deleteError.message}`);
+            handleDatabaseError(deleteError, `delete transcript metadata for sourceId=${sourceId} version=${version}`);
         }
     }
 
@@ -489,7 +601,7 @@ export class TranscriptStorage {
             .eq('source_id', sourceId);
 
         if (error) {
-            throw new Error(`Failed to find transcript versions: ${error.message}`);
+            handleDatabaseError(error, `find transcript versions for deletion sourceId=${sourceId}`);
         }
 
         if (!data || data.length === 0) {
@@ -503,7 +615,7 @@ export class TranscriptStorage {
             .remove(blobKeys);
 
         if (storageError) {
-            throw new Error(`Failed to delete transcript blobs: ${storageError.message}`);
+            handleStorageError(storageError, `delete transcript blobs for sourceId=${sourceId}`);
         }
 
         // Delete all metadata records
@@ -513,7 +625,7 @@ export class TranscriptStorage {
             .eq('source_id', sourceId);
 
         if (deleteError) {
-            throw new Error(`Failed to delete transcript metadata: ${deleteError.message}`);
+            handleDatabaseError(deleteError, `delete all transcript metadata for sourceId=${sourceId}`);
         }
     }
 
@@ -552,7 +664,7 @@ export class TranscriptStorage {
 
         if (error) {
             console.error(`Error retrieving latest version for ${sourceId}:`, error);
-            throw new Error(`Failed to retrieve latest version: ${error.message}`);
+            handleDatabaseError(error, `retrieve latest version for sourceId=${sourceId}`);
         }
 
         // Add more verbose logging for debugging
@@ -582,11 +694,18 @@ export class TranscriptStorage {
         // Sanitize sourceId to prevent path issues:
         // - Replace forward slashes with hyphens to avoid double slashes
         // - Replace spaces with underscores for cleaner paths
-        // - Remove other problematic characters that could cause URL issues
-        const sanitizedSourceId = sourceId
-            .replace(/\//g, '-')    // Replace forward slashes
-            .replace(/\s+/g, '_')   // Replace spaces with underscores
-            .replace(/[<>:"|?*]/g, '-'); // Replace other problematic characters
+        // - Replace curly braces and other problematic characters that could cause URL issues
+        // - Ensure empty strings get a fallback value to prevent double slashes
+        let sanitizedSourceId = sourceId
+            .replace(/\//g, '-')           // Replace forward slashes
+            .replace(/\s+/g, '_')          // Replace spaces with underscores
+            .replace(/[<>:"|?*{}]/g, '-')  // Replace problematic characters including curly braces
+            .replace(/[^\w\-_.]/g, '-');   // Replace any remaining non-alphanumeric chars (except hyphens, underscores, dots)
+            
+        // Handle edge case: empty string after sanitization
+        if (!sanitizedSourceId || sanitizedSourceId.trim() === '') {
+            sanitizedSourceId = `fallback-${nanoid(8)}`;
+        }
             
         return `${this.pathPrefix}/${sanitizedSourceId}/v${version}_${nanoid(8)}`;
     }
