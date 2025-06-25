@@ -194,3 +194,7 @@ This document provides essential information for productive development. For det
 ## File Management Guidelines
 
 - We should create txt files using the naming convention {github-issue-#}-short-description.txt in the claude/todos directory to track our work. We should update this file to reflect our progress as we go.
+
+## Supabase Execution Memories
+
+- Remember you need to use `npx supabase...` not `supabase...`
