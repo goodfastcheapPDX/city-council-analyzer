@@ -30,6 +30,13 @@ fi
 4. **Progress Tracking:** Update todo file with completed tasks, but do NOT mark phase as complete
 5. **Stop and Report:** When phase is complete, stop and report status
 
+### **WORKFLOW STRATEGY INTEGRATION:**
+Apply development-workflow-strategy.md guidelines:
+6. **Commit Batching:** Complete logical units before committing (tests + implementation + docs)
+7. **Phase-Based Commits:** Aim for one comprehensive commit per completed phase
+8. **Parallel Work Awareness:** Check for and coordinate with concurrent development streams
+9. **Branch Management:** Use appropriate branch structure based on complexity and coordination needs
+
 ## Phase Identification Process
 
 ### 1. **Read Current Plan**
@@ -74,24 +81,33 @@ Extract tasks from the identified phase:
 
 ## Required Actions During Execution
 
-### **Before Starting Any Work:**
-1. Read the branch information from the plan
-2. Verify you're on the correct branch (or create it if needed)
-3. Ensure development environment is ready
-4. Check that all phase dependencies are satisfied
+### **Before Starting Any Work (Workflow Strategy Checklist):**
+1. **Dependency Analysis:** Review what must complete first vs parallel opportunities
+2. **Branch Strategy:** Determine if single vs multiple branches needed for coordination
+3. **Commit Planning:** Plan logical commit batching points (phase completion, logical units)
+4. **Parallel Work Check:** Identify any concurrent development streams to coordinate with
+5. Read the branch information from the plan
+6. Verify you're on the correct branch (or create it if needed)
+7. Ensure development environment is ready
+8. Check that all phase dependencies are satisfied
 
 ### **During Task Execution:**
 1. Follow the implementation details exactly as specified
 2. Respect the Definition of Done for each task
 3. Write clean, well-documented code
 4. Create appropriate tests as specified
-5. Commit work incrementally with clear commit messages
+5. **Batch related changes:** Group tests + implementation + documentation together
+6. **Coordinate parallel work:** Check for conflicts with concurrent development streams
+7. Commit logical units following development-workflow-strategy.md guidelines
 
 ### **After Each Task:**
 1. Update the todo file to mark task as complete: `- [x] **Task Name**`
-2. Commit the todo file update
-3. Push changes to the branch
-4. Verify task completion against Definition of Done
+2. **Evaluate commit strategy:** 
+   - Individual task commit vs batched with related tasks
+   - Consider phase completion for comprehensive commit
+3. Commit changes following workflow strategy guidelines
+4. Push changes to the branch
+5. Verify task completion against Definition of Done
 
 ## Status Reporting Format
 
@@ -148,6 +164,11 @@ Extract tasks from the identified phase:
 - [Major outcomes of this phase]
 - [Features/fixes implemented]
 - [Documentation created]
+
+**Workflow Strategy Applied:**
+- **Commit Strategy:** [Single phase commit / Batched logical units / Individual tasks]
+- **Branch Coordination:** [Single branch / Coordinated with parallel branches]
+- **Parallel Work:** [None / Coordinated with: branch names]
 
 **Ready for:** [Next phase name]
 **Action Required:** Run `/pickup [issue_number]` to continue with next phase
