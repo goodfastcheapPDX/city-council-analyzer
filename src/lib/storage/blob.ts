@@ -1,8 +1,3 @@
-import {
-    put,
-    del,
-    head,
-} from '@vercel/blob';
 import { type SupabaseClient } from '@supabase/supabase-js';
 import { nanoid } from 'nanoid';
 import { 
@@ -20,7 +15,7 @@ import {
     normalizeMetadata,
     type MetadataValidationResult
 } from '@/lib/utils/metadata-validation';
-import { dateUtils, typedDateUtils } from '@/lib/config';
+import { dateUtils, typedDateUtils, config } from '@/lib/config';
 
 
 /**
@@ -99,7 +94,7 @@ export class TranscriptStorage {
      * @returns Promise with upload response
      */
     async uploadTranscript(
-        content: Parameters<typeof put>[1],
+        content: string | ArrayBuffer | Blob | File,
         metadata: Omit<TranscriptMetadata, 'uploadedAt' | 'version'>
     ): Promise<TranscriptBlobResponse> {
         // Validate metadata using utility functions
@@ -125,13 +120,28 @@ export class TranscriptStorage {
             uploadedAt: dateUtils.now()
         });
 
-        // Upload to Vercel Blob
-        const result = await put(blobKey, content, {
-            contentType: 'application/json',
-            access: 'public',
-            cacheControlMaxAge: 3600, // Cache for an hour
-            addRandomSuffix: true
-        });
+        // Upload to Supabase Storage
+        const { data, error: uploadError } = await this.supabase.storage
+            .from(config.storage.bucketName)
+            .upload(blobKey, content, {
+                contentType: 'application/json',
+                cacheControl: '3600', // Cache for an hour
+                upsert: false // Don't overwrite existing files (addRandomSuffix equivalent)
+            });
+
+        if (uploadError) {
+            throw new Error(`Failed to upload transcript: ${uploadError.message}`);
+        }
+
+        // Get the public URL for the uploaded file
+        const { data: urlData } = this.supabase.storage
+            .from(config.storage.bucketName)
+            .getPublicUrl(blobKey);
+
+        const result = {
+            pathname: blobKey,
+            url: urlData.publicUrl
+        };
 
         // Get the size by checking the content
         let contentSize = 0;
@@ -139,12 +149,12 @@ export class TranscriptStorage {
             contentSize = new TextEncoder().encode(content).length;
         } else if (content instanceof ArrayBuffer) {
             contentSize = content.byteLength;
-        } else if (content instanceof Blob) {
-            contentSize = content.size;
         } else if (content instanceof File) {
             contentSize = content.size;
+        } else if (content instanceof Blob) {
+            contentSize = content.size;
         }
-        // For ReadableStream and other types, we won't have size info initially
+        // For other types, we won't have size info initially
 
         // Store metadata in Supabase
         const { error } = await this.supabase
@@ -167,7 +177,9 @@ export class TranscriptStorage {
 
         if (error) {
             // If metadata storage fails, delete the blob to maintain consistency
-            await del(result.pathname);
+            await this.supabase.storage
+                .from(config.storage.bucketName)
+                .remove([result.pathname]);
             throw new Error(`Failed to store transcript metadata: ${error.message}`);
         }
 
@@ -208,22 +220,22 @@ export class TranscriptStorage {
         }
 
         const metadataRecord = data[0];
-        const blobKey = metadataRecord.url;
+        const blobKey = metadataRecord.blob_key;
 
-        // Get content from Vercel Blob
-        const headResponse = await head(blobKey);
+        // Get content from Supabase Storage
+        const { data: fileData, error: downloadError } = await this.supabase.storage
+            .from(config.storage.bucketName)
+            .download(blobKey);
 
-        if (!headResponse) {
-            throw new Error(`Transcript blob not found: ${blobKey}`);
+        if (downloadError) {
+            throw new Error(`Transcript blob not found: ${blobKey} - ${downloadError.message}`);
         }
 
-        const response = await fetch(headResponse.url);
-
-        if (!response.ok) {
-            throw new Error(`Failed to fetch transcript: ${response.statusText}`);
+        if (!fileData) {
+            throw new Error(`No file data returned for blob: ${blobKey}`);
         }
 
-        const content = await response.text();
+        const content = await fileData.text();
       
         // Convert Supabase record to TranscriptMetadata using normalized method
         const metadata = this.normalizeRecord(metadataRecord);
