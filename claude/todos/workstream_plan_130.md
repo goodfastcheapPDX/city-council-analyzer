@@ -85,15 +85,17 @@ Replace all Vercel Blob API calls in the TranscriptStorage class with Supabase S
   - **Completed:** Replaced head() + fetch pattern with Supabase Storage download(), updated to use blob_key from metadata
 
 ### Phase 3: Deletion and Utility Methods (Estimated: 3 hours)
-- [ ] **Task 6** - Implement Deletion Methods Migration
+- [x] **Task 6** - Implement Deletion Methods Migration ✅ COMPLETED
   - **Details:** Replace `del()` calls with `supabase.storage.from('transcripts').remove()` in both deletion methods
   - **Dependencies:** Task 5
   - **Definition of Done:** Both deleteTranscriptVersion() and deleteAllVersions() use Supabase Storage
+  - **Completed:** Replaced both del() calls with Supabase Storage remove() API, updated error handling, verified TypeScript compilation
 
-- [ ] **Task 7** - Update URL Generation and File Info
+- [x] **Task 7** - Update URL Generation and File Info ✅ COMPLETED
   - **Details:** Modify database URL storage to use Supabase Storage URLs, update size calculation
   - **Dependencies:** Task 6
   - **Definition of Done:** URLs in database point to Supabase Storage, size calculation accurate
+  - **Completed:** Fixed deletion methods to use blob_key instead of url field, verified all URL generation and file size calculation already implemented correctly for Supabase Storage
 
 ### Phase 4: Error Handling and Testing (Estimated: 3 hours)
 - [ ] **Task 8** - Standardize Error Handling

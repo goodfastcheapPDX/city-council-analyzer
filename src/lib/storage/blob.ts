@@ -444,7 +444,7 @@ export class TranscriptStorage {
         // Get the blob key from Supabase
         const { data, error } = await this.supabase
             .from('transcript_metadata')
-            .select('url')
+            .select('blob_key')
             .eq('source_id', sourceId)
             .eq('version', version)
             .single();
@@ -453,10 +453,16 @@ export class TranscriptStorage {
             throw new Error(`Transcript version not found: ${error?.message || 'Record not found'}`);
         }
 
-        const blobKey = data.url;
+        const blobKey = data.blob_key;
 
-        // Delete from Vercel Blob
-        await del(blobKey);
+        // Delete from Supabase Storage
+        const { error: storageError } = await this.supabase.storage
+            .from(config.storage.bucketName)
+            .remove([blobKey]);
+
+        if (storageError) {
+            throw new Error(`Failed to delete transcript blob: ${storageError.message}`);
+        }
 
         // Delete from Supabase
         const { error: deleteError } = await this.supabase
@@ -479,7 +485,7 @@ export class TranscriptStorage {
         // Get all versions from Supabase
         const { data, error } = await this.supabase
             .from('transcript_metadata')
-            .select('url')
+            .select('blob_key')
             .eq('source_id', sourceId);
 
         if (error) {
@@ -490,10 +496,15 @@ export class TranscriptStorage {
             return;
         }
 
-        // Delete all blobs concurrently
-        await Promise.all(
-            data.map(item => del(item.url))
-        );
+        // Delete all blobs from Supabase Storage
+        const blobKeys = data.map(item => item.blob_key);
+        const { error: storageError } = await this.supabase.storage
+            .from(config.storage.bucketName)
+            .remove(blobKeys);
+
+        if (storageError) {
+            throw new Error(`Failed to delete transcript blobs: ${storageError.message}`);
+        }
 
         // Delete all metadata records
         const { error: deleteError } = await this.supabase

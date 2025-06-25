@@ -385,7 +385,7 @@ export const config = {
          */
         enableSemanticSegmentation: true,
     }
-};
+} as const;
 
 // .env.example file
 /*
