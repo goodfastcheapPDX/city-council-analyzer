@@ -142,8 +142,16 @@ npm run dev
 ---
 *Last updated: 2025-06-25*
 
-## Latest Commit (2025-06-25)
-✅ **Issue #129 Supabase Storage Infrastructure COMPLETE**
+## Latest Commit (2025-06-25) 
+✅ **Issue #130 Phase 2 COMPLETE - Core API Migration**
+- **PHASE COMPLETE**: Phase 2 - Core API Migration (uploadTranscript + getTranscript)
+- **Progress**: 5/11 tasks complete across workstream
+- **Migration Status**: Upload and retrieval methods fully migrated to Supabase Storage
+- **Files Modified**: src/lib/storage/blob.ts (major API migration), workstream plan updates
+- **TypeScript**: 2 remaining errors for deletion methods (Phase 3 scope)
+- **Ready for**: Phase 3 - Deletion and Utility Methods
+
+✅ **Issue #129 Supabase Storage Infrastructure COMPLETE** (Previous Session)
 - **WORKSTREAM COMPLETE**: All 7 tasks across 3 phases implemented successfully
 - **Phase 1**: Local environment setup - SQL migrations, config updates, bucket creation ✅
 - **Phase 2**: Testing and validation - file uploads, security policies, size limits ✅  

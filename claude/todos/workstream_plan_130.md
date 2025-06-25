@@ -66,20 +66,23 @@ Replace all Vercel Blob API calls in the TranscriptStorage class with Supabase S
   - **Findings:** Documented upload(), remove(), download(), getPublicUrl() patterns. Error handling strategy defined.
 
 ### Phase 2: Core API Migration (Estimated: 4 hours)
-- [ ] **Task 3** - Replace Import Statements and Setup
+- [x] **Task 3** - Replace Import Statements and Setup ✅ COMPLETED
   - **Details:** Remove @vercel/blob imports, ensure Supabase client access, add bucket reference
   - **Dependencies:** Task 2
   - **Definition of Done:** File compiles with Supabase Storage imports, no Vercel Blob references
+  - **Completed:** Removed Vercel Blob imports (put, del, head), added config import for bucket name access
 
-- [ ] **Task 4** - Implement uploadTranscript() Migration
+- [x] **Task 4** - Implement uploadTranscript() Migration ✅ COMPLETED
   - **Details:** Replace `put()` with `supabase.storage.from('transcripts').upload()`, maintain file naming
   - **Dependencies:** Task 3
   - **Definition of Done:** Upload method uses Supabase Storage, preserves existing interface
+  - **Completed:** Replaced Vercel Blob put() with Supabase Storage upload(), updated error handling, fixed function signature
 
-- [ ] **Task 5** - Implement getTranscript() Migration
+- [x] **Task 5** - Implement getTranscript() Migration ✅ COMPLETED
   - **Details:** Replace `head()` + fetch with Supabase Storage download/public URL pattern
   - **Dependencies:** Task 4
   - **Definition of Done:** Retrieval method uses Supabase Storage, preserves content access
+  - **Completed:** Replaced head() + fetch pattern with Supabase Storage download(), updated to use blob_key from metadata
 
 ### Phase 3: Deletion and Utility Methods (Estimated: 3 hours)
 - [ ] **Task 6** - Implement Deletion Methods Migration
