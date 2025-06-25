@@ -71,15 +71,17 @@ Set up Supabase Storage infrastructure to replace Vercel Blob Storage across all
   - **Completed:** Migration 20250624212553_add_transcripts_bucket.sql applied successfully, transcripts bucket created with 50MB limit and proper MIME types
 
 ### Phase 2: Testing and Validation (Estimated: 1-2 hours)
-- [ ] **Task 4** - File Upload Testing
+- [x] **Task 4** - File Upload Testing ✅ COMPLETED
   - **Details:** Test file upload functionality through Supabase Dashboard and verify public URL access
-  - **Dependencies:** Task 3 completed
+  - **Dependencies:** Task 3 completed ✅
   - **Definition of Done:** Can upload transcript files and access them via public URLs
+  - **Completed:** Successfully uploaded JSON and TXT files, verified public URL access, confirmed 50MB file size limit enforcement, resolved MIME type issues with wildcard configuration
 
-- [ ] **Task 5** - Security Policy Validation
+- [x] **Task 5** - Security Policy Validation ✅ COMPLETED
   - **Details:** Verify RLS policies work correctly and file size limits are enforced
-  - **Dependencies:** Task 4 completed
+  - **Dependencies:** Task 4 completed ✅
   - **Definition of Done:** Policies prevent unauthorized access and enforce 50MB limit
+  - **Completed:** Verified public bucket security model works correctly - upload/delete operations require authorization, 50MB file size limit enforced, proper error codes for unauthorized access, authenticated operations function correctly
 
 ### Phase 3: Environment Preparation (Estimated: 1 hour)
 - [ ] **Task 6** - Test Environment Deployment Plan
