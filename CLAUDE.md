@@ -59,7 +59,12 @@ claude/
 **For TDD guidelines**: See @claude/rules/test-driven-development.md
 
 ### Development Workflow
+- **Commit batching** and **branch management** for optimal development velocity
+- **Parallel development planning** to identify concurrent work opportunities
+- **Phase-based implementation** for complex issues with clear milestones
 - I keep the dev server running in a separate tab for efficiency.
+
+**For workflow optimization guidelines**: See @claude/rules/development-workflow-strategy.md
 
 ### Testing Strategy
 - **Property-based testing** with Fast-Check for edge cases
