@@ -309,7 +309,29 @@ export const typedDateUtils = {
 } as const;
 
 export const config = {
-    // Blob storage configuration
+    // Supabase configuration
+    supabase: {
+        url: process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '',
+        anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '',
+        serviceKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+    },
+
+    // Storage configuration (Supabase Storage)
+    storage: {
+        bucketName: 'transcripts',
+        maxFileSize: 50 * 1024 * 1024, // 50MB to match bucket configuration
+        allowedMimeTypes: [
+            'application/json',
+            'text/plain',
+            'text/srt',
+            'text/vtt',
+            'application/octet-stream'
+        ],
+        // Public access setting depends on environment
+        publicAccess: process.env.NODE_ENV === 'development',
+    },
+
+    // Legacy blob storage configuration (for migration reference)
     blob: {
         /**
          * Path prefix for transcript blobs
@@ -319,7 +341,7 @@ export const config = {
 
         /**
          * Maximum allowed transcript size in bytes
-         * Default: 10MB
+         * Default: 10MB (legacy - now 50MB in Supabase)
          */
         maxTranscriptSize: 10 * 1024 * 1024,
 
@@ -367,15 +389,20 @@ export const config = {
 
 // .env.example file
 /*
-# Vercel Blob Storage
-BLOB_READ_WRITE_TOKEN=your_blob_read_write_token
-
-# Database (Supabase)
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=https://your_project_ref.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+# Legacy Vercel Blob Storage (for migration)
+BLOB_READ_WRITE_TOKEN=your_blob_read_write_token
 
 # API Keys
 OPENAI_API_KEY=your_openai_api_key
+
+# Storage Configuration
+STORAGE_BUCKET_NAME=transcripts
+STORAGE_MAX_FILE_SIZE=52428800
 
 # Feature Flags
 ENABLE_PROCESSING=true
