@@ -128,13 +128,13 @@ WHERE id = 'transcripts';
 #### Test via cURL (if public upload enabled)
 ```bash
 # Test file upload (adjust endpoint for your test project)
-curl -X POST 'https://YOUR_TEST_PROJECT_REF.supabase.co/storage/v1/object/transcripts/test-file.json' \
-  -H 'Authorization: Bearer YOUR_SERVICE_ROLE_KEY' \
+curl -X POST 'https://znybssicqofaendbrnbt.supabase.co/storage/v1/object/transcripts/test-file.json' \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpueWJzc2ljcW9mYWVuZGJybmJ0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDY0OTA5OCwiZXhwIjoyMDY2MjI1MDk4fQ.dLCUBWB_Wibc5xYmvNFbzrDRGm5ZqKCEqoArIUsf1qo' \
   -H 'Content-Type: application/json' \
   --data-binary '@sample-data/city-council-2024-01-15.txt'
 
 # Test public file access
-curl 'https://YOUR_TEST_PROJECT_REF.supabase.co/storage/v1/object/public/transcripts/test-file.json'
+curl 'https://znybssicqofaendbrnbt.supabase.co/storage/v1/object/public/transcripts/test-file.json'
 ```
 
 ### 9. File Size Limit Testing
@@ -178,29 +178,24 @@ STORAGE_MAX_FILE_SIZE=52428800  # 50MB in bytes
 
 ### 12. Application Configuration
 
-Update your test application configuration to point to the test Supabase project:
+The application configuration for Supabase Storage is already integrated into the codebase at `src/lib/config.ts`. The configuration automatically adapts to your test environment when the proper environment variables are set.
+
+**Configuration Location**: `src/lib/config.ts`
 
 ```typescript
-// In your test environment config
-const testConfig = {
-  supabase: {
-    url: process.env.SUPABASE_URL,
-    anonKey: process.env.SUPABASE_ANON_KEY,
-    serviceKey: process.env.SUPABASE_SERVICE_ROLE_KEY
-  },
-  storage: {
-    bucketName: 'transcripts',
-    maxFileSize: 50 * 1024 * 1024, // 50MB
-    allowedMimeTypes: [
-      'application/json',
-      'text/plain',
-      'text/srt',
-      'text/vtt',
-      'application/octet-stream'
-    ]
-  }
-};
+// Configuration is automatically loaded from environment variables
+import { config } from '@/lib/config';
+
+// Access Supabase configuration
+const supabaseConfig = config.supabase;
+const storageConfig = config.storage;
 ```
+
+**Key Configuration Values**:
+- **Bucket Name**: `transcripts` (matches deployed bucket)
+- **File Size Limit**: `50MB` (matches bucket configuration)
+- **MIME Types**: Matches bucket allowed types
+- **Public Access**: Enabled for development/test environments
 
 ## Troubleshooting
 
