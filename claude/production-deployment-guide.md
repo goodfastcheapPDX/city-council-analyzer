@@ -269,37 +269,37 @@ export class ProductionStorageService {
 #### Pre-Deployment Validation
 ```bash
 # 1. Backup current production state
-supabase db dump --linked --data-only > production_backup_$(date +%Y%m%d).sql
+npx supabase db dump --linked --data-only > production_backup_$(date +%Y%m%d).sql
 
 # 2. Test migrations in staging environment first
-supabase db push --dry-run
+npx supabase db push --dry-run
 
-# 3. Validate migration SQL against production schema
-supabase migration validate --linked
+# 3. Check migration status
+npx supabase migration list --linked
 ```
 
 #### Production Deployment Steps
 ```bash
 # 1. Connect to production project
-supabase link --project-ref PRODUCTION_PROJECT_REF
+npx supabase link --project-ref PRODUCTION_PROJECT_REF
 
-# 2. Apply storage migrations with zero-downtime approach
-supabase db push --include-all
+# 2. Apply storage migrations
+npx supabase db push --include-all
 
 # 3. Verify bucket creation
-supabase storage ls
+npx supabase storage ls
 
 # 4. Test core functionality immediately
-supabase storage info transcripts
+npx supabase storage info transcripts
 ```
 
 #### Post-Deployment Verification
 ```bash
 # Verify security policies
-supabase sql "SELECT * FROM storage.policies WHERE bucket_id = 'transcripts';"
+npx supabase sql "SELECT * FROM storage.policies WHERE bucket_id = 'transcripts';"
 
 # Check bucket configuration
-supabase sql "SELECT id, name, public, file_size_limit FROM storage.buckets WHERE id = 'transcripts';"
+npx supabase sql "SELECT id, name, public, file_size_limit FROM storage.buckets WHERE id = 'transcripts';"
 
 # Test upload functionality with service role
 curl -X POST "https://PROD_PROJECT.supabase.co/storage/v1/object/transcripts/test.json" \

@@ -23,26 +23,26 @@ This document provides step-by-step instructions for deploying the Supabase Stor
 
 ```bash
 # Login to Supabase (if not already authenticated)
-supabase login
+npx supabase login
 
 # Link to your test project (replace with actual test project reference)
-supabase link --project-ref YOUR_TEST_PROJECT_REF
+npx supabase link --project-ref YOUR_TEST_PROJECT_REF
 
 # Verify connection
-supabase status
+npx supabase status
 ```
 
 ### 2. Verify Current Migration Status
 
 ```bash
 # Check applied migrations in test environment
-supabase db remote list
+npx supabase migration list
 
 # Check local migration files
 ls -la supabase/migrations/
 
 # Ensure test environment is up to date with latest schema
-supabase db pull
+npx supabase db pull
 ```
 
 ## Storage Bucket Deployment
@@ -51,10 +51,10 @@ supabase db pull
 
 ```bash
 # Apply all pending migrations (including storage setup)
-supabase db push
+npx supabase db push
 
-# Or apply specific storage migration
-supabase migration up --to 20250624212553
+# Or apply pending migrations to local database
+npx supabase migration up
 ```
 
 **Expected Migration Files to Apply:**
@@ -84,10 +84,10 @@ The migrations will automatically create the `transcripts` bucket with these set
 #### Via Supabase CLI
 ```bash
 # List storage buckets
-supabase storage ls
+npx supabase storage ls
 
-# Check bucket configuration
-supabase storage info transcripts
+# Check bucket configuration  
+npx supabase storage info transcripts
 ```
 
 ## Security Configuration
