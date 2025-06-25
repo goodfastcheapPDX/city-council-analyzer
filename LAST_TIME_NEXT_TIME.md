@@ -143,13 +143,14 @@ npm run dev
 *Last updated: 2025-06-25*
 
 ## Latest Commit (2025-06-25) 
-✅ **Issue #130 Phase 2 COMPLETE - Core API Migration**
-- **PHASE COMPLETE**: Phase 2 - Core API Migration (uploadTranscript + getTranscript)
-- **Progress**: 5/11 tasks complete across workstream
-- **Migration Status**: Upload and retrieval methods fully migrated to Supabase Storage
-- **Files Modified**: src/lib/storage/blob.ts (major API migration), workstream plan updates
-- **TypeScript**: 2 remaining errors for deletion methods (Phase 3 scope)
-- **Ready for**: Phase 3 - Deletion and Utility Methods
+✅ **Issue #130 Phase 3 COMPLETE - Deletion and Utility Methods**
+- **PHASE COMPLETE**: Phase 3 - Deletion and Utility Methods (deletion operations)
+- **Progress**: 7/11 tasks complete across workstream  
+- **Migration Status**: All deletion methods migrated to Supabase Storage
+- **Critical Fix**: Deletion methods now use blob_key instead of url field
+- **Files Modified**: src/lib/storage/blob.ts (deletion migration), workstream plan updates
+- **TypeScript**: Clean compilation with no errors
+- **Ready for**: Phase 4 - Error Handling and Testing
 
 ✅ **Issue #129 Supabase Storage Infrastructure COMPLETE** (Previous Session)
 - **WORKSTREAM COMPLETE**: All 7 tasks across 3 phases implemented successfully
