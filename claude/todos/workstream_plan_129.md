@@ -162,12 +162,12 @@ The config.toml should specify:
 - Security policy settings
 
 ### Testing Checklist
-- [ ] Bucket appears in Supabase Dashboard
-- [ ] File upload works through dashboard
-- [ ] Public URL access functions correctly
-- [ ] File size limits properly enforced
-- [ ] RLS policies prevent unauthorized access
-- [ ] Migration script runs without errors
+- [x] Bucket appears in Supabase Dashboard
+- [x] File upload works through dashboard
+- [x] Public URL access functions correctly
+- [x] File size limits properly enforced
+- [x] RLS policies prevent unauthorized access
+- [x] Migration script runs without errors
 
 ### Security Considerations
 - Use public access for development/testing
