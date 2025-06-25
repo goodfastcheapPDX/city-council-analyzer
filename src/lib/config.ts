@@ -247,6 +247,24 @@ export const dateUtils = {
             throw new Error(`Invalid date for display formatting: ${date}`);
         }
         return parsed.toLocaleString(DateTime.DATE_FULL);
+    },
+
+    /**
+     * Add days to a date
+     * @param date - ISO date string
+     * @param days - Number of days to add (can be negative)
+     * @returns ISO string with days added
+     */
+    addDays(date: string, days: number): string {
+        const parsed = DateTime.fromISO(date);
+        if (!parsed.isValid) {
+            throw new Error(`Invalid date for adding days: ${date}`);
+        }
+        const result = parsed.plus({ days }).toISO();
+        if (!result) {
+            throw new Error(`Failed to add ${days} days to date: ${date}`);
+        }
+        return result;
     }
 } as const;
 

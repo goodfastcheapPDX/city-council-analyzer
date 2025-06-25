@@ -58,12 +58,13 @@ Eliminate all direct Date object usage in test files (11+ files identified) and 
   - **Definition of Done:** Property tests use dateUtils, maintain edge case discovery
   - **Implementation:** Replaced direct Date usage with dateUtils.testDate(), enhanced Fast-Check generators for deterministic date generation, all 4 property-based tests passing
 
-- [ ] **Implement Shared Test Data Generator with Faker** - src/__tests__/utils/test-data-generator.ts
+- [x] **Implement Shared Test Data Generator with Faker** - src/__tests__/utils/test-data-generator.ts (COMPLETED 2025-06-25)
   - **Details:** Create utility using Faker.js for consistent, realistic test data generation with override capabilities
   - **Features:** Support for transcript data, speaker info, metadata with selective overrides
   - **Dependencies:** Enhanced property-based date generation complete
   - **Definition of Done:** Centralized test data creation, simplified test code focusing only on relevant data variations
   - **API Example:** `generateTranscriptData({ title: 'Custom Title', speakerCount: 3 })` for focused test concerns
+  - **Implementation:** Created comprehensive test data generator with deterministic faker seed, dateUtils integration, and extensive test coverage (12 tests passing)
 
 ### Phase 2: Storage Test Standardization (Estimated: 8-10 hours)
 - [ ] **Listing Tests Date Updates** - src/__tests__/lib/storage/listing.test.ts
