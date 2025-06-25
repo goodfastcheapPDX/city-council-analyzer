@@ -113,9 +113,7 @@ CREATE OR REPLACE FUNCTION public.initialize_transcript_tables()
  LANGUAGE plpgsql
 AS $function$
 BEGIN
-    -- This function exists as a placeholder
-    -- The actual initialization is done through migrations
-    -- But the TranscriptStorage class calls this to ensure tables exist
+
 END;
 $function$
 ;
