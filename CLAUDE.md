@@ -148,6 +148,21 @@ claude/
 ### Testing Best Practices
 - When writing unit tests, always reference the actual input data in the assertion instead of recreating logic or patterns emulating the input data. For example, `expect(actual.id).toMatch(input.id)`, not `expect(actual.id).toMatch(/some-regex-that-looks-like-input-id/)`
 
+### Date Handling Standards
+- **NEVER use native Date operations** - All date handling must use `dateUtils` from `@/lib/config`
+- **Use branded types** for compile-time safety (`DatabaseDateString`, `UserInputDateString`, `DisplayDateString`)
+- **ESLint enforcement** prevents `new Date()`, `Date.now()`, and direct date library imports
+- **Runtime validation** with type guards for external data (`dateTypeGuards.assertDatabaseDateString()`)
+- **Deterministic testing** with `dateUtils.testDate()` for reliable test results
+
+**Key APIs:**
+- `dateUtils.now()` - Current timestamp (never `new Date()` or `Date.now()`)
+- `dateUtils.userInputToDatabase()` - Convert form inputs to storage format
+- `typedDateUtils.now()` - Type-safe current timestamp returning `DatabaseDateString`
+- `typedDateUtils.validateUserInput()` - Validate and cast user input dates
+
+**For complete date handling guide**: See @docs/date-handling-guide.md
+
 ### Issue Management
 - **Detailed specifications** required for all GitHub issues
 - **Clear dependencies** and acceptance criteria

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Upload, RefreshCw } from 'lucide-react';
+import { dateUtils } from '@/lib/config';
 
 // In a real implementation, these would be server actions or API calls
 async function uploadTranscript(file: File) {
@@ -23,26 +24,26 @@ async function uploadTranscript(file: File) {
 
 async function fetchTranscripts() {
     // This is a mock implementation
-    return new Promise<Array<{ id: string; name: string; uploadedAt: Date; status: string }>>(
+    return new Promise<Array<{ id: string; name: string; uploadedAt: string; status: string }>>(
         (resolve) => {
             setTimeout(() => {
                 resolve([
                     {
                         id: '1',
                         name: 'Team Meeting - March 2023.json',
-                        uploadedAt: new Date('2023-03-15'),
+                        uploadedAt: dateUtils.userInputToDatabase('2023-03-15'),
                         status: 'processed'
                     },
                     {
                         id: '2',
                         name: 'Customer Interview - April 2023.json',
-                        uploadedAt: new Date('2023-04-20'),
+                        uploadedAt: dateUtils.userInputToDatabase('2023-04-20'),
                         status: 'processing'
                     },
                     {
                         id: '3',
                         name: 'Product Review - May 2023.json',
-                        uploadedAt: new Date('2023-05-10'),
+                        uploadedAt: dateUtils.userInputToDatabase('2023-05-10'),
                         status: 'failed'
                     }
                 ]);
@@ -142,7 +143,7 @@ export default function TranscriptUpload({ onUploadSuccess }: TranscriptUploadPr
 
 export function TranscriptList() {
     const [transcripts, setTranscripts] = useState<
-        Array<{ id: string; name: string; uploadedAt: Date; status: string }>
+        Array<{ id: string; name: string; uploadedAt: string; status: string }>
     >([]);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -200,7 +201,7 @@ export function TranscriptList() {
                                 <div>
                                     <h3 className="font-medium">{transcript.name}</h3>
                                     <p className="text-sm text-gray-500">
-                                        Uploaded {transcript.uploadedAt.toLocaleDateString()}
+                                        Uploaded {dateUtils.toUserDisplay(transcript.uploadedAt)}
                                     </p>
                                 </div>
                                 <div className="flex items-center">
