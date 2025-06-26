@@ -4,6 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 THE MOST IMPORTANT RULE IS @claude/rules/mvp.md. MVP is the golden rule!
 
+| Gate           | What it must do                                                                                                                          | Fail condition                                                      |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| **MVP Gate**   | Claude lists **only** the tasks strictly needed to satisfy each acceptance criterion once. Anything else is pushed to “Deferred Ideas.”  | If MVP tasks don’t map 1-to-1 to criteria, abort plan generation.   |
+| **YAGNI Gate** | For every proposed task, Claude must answer: “What breaks if we skip this?” If the answer is vague or speculative, move task to backlog. | If ≥1 task lacks a concrete breakage description, plan is rejected. |
+
+
 ## Project Overview
 
 This is a Next.js application called "transcript-analysis-system" that manages city council transcript uploads, storage, and analysis. The system uses Supabase Storage for file storage and Supabase for metadata persistence and vector embeddings.
@@ -76,6 +82,53 @@ claude/
 - I keep the dev server running in a separate tab for efficiency.
 
 **For workflow optimization guidelines**: See @claude/rules/development-workflow-strategy.md
+
+#### Available Github Issue Labels
+| Label                       | Description                                                                                                                                              |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **scope:🛹**                | **Skateboard** – first, smallest end-to-end slice that delivers real user value; proves the concept and lets the team learn fast (absolute MVP).         |
+| **scope:🛴**                | **Scooter** – incremental upgrade on the skateboard: still simple, but adds stability and a better user-experience while preserving the end-to-end flow. |
+| **scope:🚲**                | **Bicycle** – robust, production-viable version with higher performance and usability; covers most core use-cases but with room to grow.                 |
+| **scope:🏍️**               | **Motorcycle** – high-performance, near-final solution; advanced features and scalability for heavier usage, yet still leaner than the full vision.      |
+| **scope:🚗**                | **Car** – fully featured, polished product that fulfills the original vision with complete functionality, reliability, and comfort.                      |
+| **scope\:yagni?**           | Ask whether we will ever truly need this; if no, close the issue (You Ain’t Gonna Need It).                                                              |
+| **status\:blocked**         | Waiting on external or internal dependencies.                                                                                                            |
+| **status\:deferred**        | Archived until a later date; revisit when priorities or context change.                                                                                  |
+| **status\:in-progress**     | Actively being worked on by an assignee.                                                                                                                 |
+| **status\:ready**           | All dependencies met; work can start immediately.                                                                                                        |
+| **status\:review**          | Implementation complete; needs testing and/or code review.                                                                                               |
+| **status\:unclear**         | Requires clarification or further development.                                                                                                           |
+| **workstream\:bug**         | Something isn’t working as expected; requires a fix.                                                                                                     |
+| **workstream\:docs**        | Improvements or additions to documentation.                                                                                                              |
+| **workstream\:duplicate**   | This issue or pull request already exists elsewhere.                                                                                                     |
+| **workstream\:enhancement** | New feature request or significant improvement.                                                                                                          |
+| **workstream\:invalid**     | The report is not actionable or is incorrect.                                                                                                            |
+| **workstream\:question**    | Further information or clarification requested.                                                                                                          |
+| **workstream\:testing**     | Testing improvements, coverage, or infrastructure.                                                                                                       |
+| **workstream\:wontfix**     | Acknowledged but will not be worked on (out of scope or low value).                                                                                      |
+| **P0**                      | Someday / idea.                                                                                                                                          |
+| **P1**                      | Low priority.                                                                                                                                            |
+| **P2**                      | Medium priority.                                                                                                                                         |
+| **P3**                      | High priority.                                                                                                                                           |
+| **P4**                      | Critical / urgent.                                                                                                                                       |
+
+##### Good Examples
+| # | Practice                                                             | Example                                                                             |
+| - | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| 1 | **Single source of truth** per category (scope + status + priority). | `scope:🛹`, `status:ready`, `P3` — nothing redundant.                               |
+| 2 | **Mutually exclusive, collectively exhaustive** labels.              | Only one of `status:*` may be present; pipelines enforce swap when state changes.   |
+| 3 | **Consistent color semantics** across repos.                         | Greens = status, Blues = scope, Reds = priority → visual scan tells pipeline stage. |
+| 4 | **Automated pruning of stale labels**.                               | CI bot strips `status:in-progress` when PR merged, adds `status:review`.            |
+| 5 | **Docs live next to labels**.                                        | `docs/labels.md` links each label to a one-sentence rule and onboarding quiz.       |
+
+##### Bad Examples
+| # | Anti-Pattern                               | Illustration                                                                                                                             |
+| - | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 | **Label soup** — ten+ labels that overlap. | `bug`, `defect`, `error`, `failure`, `broken🔧`, `scope:🚗` on the same issue.                                                           |
+| 2 | **Conflicting states**.                    | An issue tagged both `status:blocked` and `status:ready`.                                                                                |
+| 3 | **Color chaos**.                           | Random pastel palette where `P4` is pale mint and `scope:🛹` is dark red.                                                                |
+| 4 | **Forgotten YAGNI flags**.                 | Issue closed months ago still marked `scope:yagni?`, confusing search filters.                                                           |
+| 5 | **Free-text brainstorm** as labels.        | Adding ad-hoc labels like `needs-brainstorm`, `maybe-later?`, `experimental-ish` instead of using `status:unclear` or `status:deferred`. |
 
 ### Testing Strategy
 - **Property-based testing** with Fast-Check for edge cases
@@ -212,10 +265,6 @@ This repository includes automated guidance in the @claude directory:
 This approach ensures no time is wasted figuring out where development left off and maintains focus on planned priorities across multi-system integrations (Next.js, Vercel Blob, Supabase).
 
 This document provides essential information for productive development. For detailed specifications, consult the architecture plan and implementation roadmap in the `claude/` directory.
-
-## File Management Guidelines
-
-- We should create txt files using the naming convention {github-issue-#}-short-description.txt in the claude/todos directory to track our work. We should update this file to reflect our progress as we go.
 
 ## Development Memories
 

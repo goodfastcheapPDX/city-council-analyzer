@@ -1,5 +1,10 @@
 # Claude Code: Pickup and Execute Workstream Phase
 
+> **Minimalism Guard**  
+> If the plan or phase you’re about to generate would exceed **25 % of the complexity budget**  
+> (► 200 net LOC, ► 2 new dependencies, ► 0 new cloud services) **or** violates any MVP/YAGNI Gate,  
+> **STOP**. Ask the user which tasks to drop or defer before proceeding.
+
 ## Command Usage
 `/pickup <issue_number>`
 
@@ -72,6 +77,10 @@ Extract tasks from the identified phase:
 3. **Testing:** Verify task completion meets DoD criteria
 4. **Documentation:** Update relevant docs/comments as needed
 5. **Task Complete:** Mark task as complete in todo file
+
+### 🔔 Demo Check
+After completing the phase, create a minimal manual test (CLI or curl) that proves the skateboard rolls.
+Do NOT begin the next phase until a human or CI job runs that demo.
 
 ### **Phase Boundaries:**
 - **NEVER** work on tasks from other phases
