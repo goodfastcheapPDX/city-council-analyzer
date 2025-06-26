@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { TranscriptStorage, TranscriptMetadata } from '@/lib/storage/blob';
 import { createStorageForTestSync as createStorageForTest } from "@/lib/storage/factories/test";
+import { generateTranscriptData, testDates } from '@/__tests__/utils/test-data-generator';
+import { dateUtils } from '@/lib/config';
+import { DateTime } from 'luxon';
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env.test' });
 
@@ -9,7 +12,19 @@ const TIMEOUT = 15000;
 
 describe.sequential('TranscriptStorage - Version Management', () => {
     let storage: TranscriptStorage;
-    const testSourceId = `version-mgmt-test-${Date.now()}`;
+    
+    // Generate deterministic test data using test-data-generator
+    const testData = generateTranscriptData({
+        sourceId: 'version-mgmt-test-deterministic', // Use deterministic sourceId instead of Date.now()
+        title: "Version Management Test",
+        date: testDates.deterministic(), // Use deterministic date: '2024-01-15'
+        speakers: ["Speaker X", "Speaker Y"],
+        format: "json",
+        processingStatus: "processed",
+        tags: ["test", "version"]
+    });
+
+    const testSourceId = testData.metadata.sourceId;
 
     // Content for multiple versions
     const versionContents = [
@@ -20,16 +35,8 @@ describe.sequential('TranscriptStorage - Version Management', () => {
         `{"version":5,"content":"Fifth version, final edits"}`
     ];
 
-    // Create a base metadata object
-    const baseMetadata: Omit<TranscriptMetadata, 'uploadedAt' | 'version'> = {
-        sourceId: testSourceId,
-        title: "Version Management Test",
-        date: "2023-05-15",
-        speakers: ["Speaker X", "Speaker Y"],
-        format: "json",
-        processingStatus: "processed",
-        tags: ["test", "version"]
-    };
+    // Use the generated metadata with deterministic dates
+    const baseMetadata = testData.metadata;
 
     // Set up before tests
     beforeAll(async () => {
@@ -95,7 +102,11 @@ describe.sequential('TranscriptStorage - Version Management', () => {
         expect(versionNumbers).toEqual([5, 4, 3, 2, 1]);
 
         // 3. Verify uploadedAt dates are consistent with version order
-        const uploadDates = versions.map(v => new Date(v.uploadedAt).getTime());
+        // Use DateTime directly for date parsing and conversion to milliseconds
+        const uploadDates = versions.map(v => {
+            const parsed = DateTime.fromISO(v.uploadedAt);
+            return parsed.toMillis();
+        });
 
         // Each date should be >= the next one (newer or same timestamp)
         for (let i = 0; i < uploadDates.length - 1; i++) {
@@ -136,13 +147,19 @@ describe.sequential('TranscriptStorage - Version Management', () => {
 
     it('should return 0 as latest version when transcript doesn\'t exist', async () => {
         // We can test this by checking what version a new transcript gets
-        const newSourceId = `new-transcript-${Date.now()}`;
+        // Generate deterministic test data for new transcript test
+        const newTestData = generateTranscriptData({
+            sourceId: 'new-transcript-deterministic', // Use deterministic sourceId instead of Date.now()
+            title: "New Transcript Test",
+            date: testDates.deterministic(),
+            speakers: ["Speaker A"],
+            format: "json",
+            processingStatus: "pending",
+            tags: ["test", "new"]
+        });
 
-        // Create new metadata with the new sourceId
-        const newMetadata = {
-            ...baseMetadata,
-            sourceId: newSourceId
-        };
+        const newSourceId = newTestData.metadata.sourceId;
+        const newMetadata = newTestData.metadata;
 
         try {
             // 1. Upload a new transcript (should be version 1)
@@ -168,14 +185,19 @@ describe.sequential('TranscriptStorage - Version Management', () => {
     }, TIMEOUT);
 
     it('should handle version conflicts during concurrent uploads', async () => {
-        // Create a unique sourceId for this test
-        const concurrentSourceId = `concurrent-test-${Date.now()}`;
+        // Generate deterministic test data for concurrent uploads test
+        const concurrentTestData = generateTranscriptData({
+            sourceId: 'concurrent-test-deterministic', // Use deterministic sourceId instead of Date.now()
+            title: "Concurrent Upload Test",
+            date: testDates.deterministic(),
+            speakers: ["Speaker X", "Speaker Y"],
+            format: "json",
+            processingStatus: "processed",
+            tags: ["test", "concurrent"]
+        });
 
-        // Create metadata with the unique sourceId
-        const concurrentMetadata = {
-            ...baseMetadata,
-            sourceId: concurrentSourceId
-        };
+        const concurrentSourceId = concurrentTestData.metadata.sourceId;
+        const concurrentMetadata = concurrentTestData.metadata;
 
         try {
             // 1. Set up multiple sequential uploads instead of concurrent

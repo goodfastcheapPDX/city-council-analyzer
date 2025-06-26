@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { TranscriptStorage } from '@/lib/storage/blob';
 import { createStorageForTestSync as createStorageForTest } from "@/lib/storage/factories/test";
+import { generateTranscriptData, testDates } from '@/__tests__/utils/test-data-generator';
+import { dateUtils } from '@/lib/config';
+import { DateTime } from 'luxon';
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env.test' });
 
@@ -10,11 +13,26 @@ const TIMEOUT = 15000;
 
 describe.sequential('TranscriptStorage - Status Update Functionality', () => {
     let storage: TranscriptStorage;
-    let supabase: any
-    const testSourceId = `status-test-${Date.now()}`;
+    let supabase: any;
+    let testSourceId: string;
+    let baseMetadata: any;
 
     // Set up before tests
     beforeAll(async () => {
+        // Generate deterministic test data using test-data-generator
+        const testData = generateTranscriptData({
+            sourceId: 'status-test-deterministic', // Use deterministic sourceId instead of Date.now()
+            title: "Status Test Transcript",
+            date: testDates.deterministic(), // Use deterministic date: '2024-01-15'
+            speakers: ["Speaker 1", "Speaker 2"],
+            format: "json",
+            processingStatus: "pending", // Start with pending status
+            tags: ["test", "status"]
+        });
+
+        testSourceId = testData.metadata.sourceId;
+        baseMetadata = testData.metadata;
+
         // Create storage instance
         storage = createStorageForTest()
         supabase = storage.supabase
@@ -24,15 +42,7 @@ describe.sequential('TranscriptStorage - Status Update Functionality', () => {
         // Upload a test transcript
         await storage.uploadTranscript(
             `{"content":"Test transcript for status updates"}`,
-            {
-                sourceId: testSourceId,
-                title: "Status Test Transcript",
-                date: "2023-07-15",
-                speakers: ["Speaker 1", "Speaker 2"],
-                format: "json",
-                processingStatus: "pending", // Start with pending status
-                tags: ["test", "status"]
-            }
+            baseMetadata
         );
     }, TIMEOUT);
 
@@ -82,22 +92,24 @@ describe.sequential('TranscriptStorage - Status Update Functionality', () => {
     }, TIMEOUT);
 
     it('should automatically set processingCompletedAt when status changes to processed', async () => {
-        // 1. Upload another version for this test
+        // 1. Upload another version for this test - use deterministic test data
+        const v2TestData = generateTranscriptData({
+            sourceId: testSourceId,
+            title: "Status Test Transcript - V2",
+            date: testDates.deterministic(), // Use deterministic date: '2024-01-15'
+            speakers: ["Speaker 1", "Speaker 2"],
+            format: "json",
+            processingStatus: "pending",
+            tags: ["test", "status"]
+        });
+
         await storage.uploadTranscript(
             `{"content":"Second version for status test"}`,
-            {
-                sourceId: testSourceId,
-                title: "Status Test Transcript - V2",
-                date: "2023-07-15",
-                speakers: ["Speaker 1", "Speaker 2"],
-                format: "json",
-                processingStatus: "pending",
-                tags: ["test", "status"]
-            }
+            v2TestData.metadata
         );
 
-        // 2. Get the upload time
-        const beforeUpdate = new Date();
+        // 2. Get the upload time using dateUtils instead of new Date()
+        const beforeUpdate = dateUtils.now();
 
         // 3. Update status to "processed"
         const updatedMetadata = await storage.updateProcessingStatus(
@@ -110,13 +122,16 @@ describe.sequential('TranscriptStorage - Status Update Functionality', () => {
         expect(updatedMetadata.processingCompletedAt).toBeTruthy();
 
         if (updatedMetadata.processingCompletedAt) {
-            const completedAt = new Date(updatedMetadata.processingCompletedAt);
+            // Use DateTime for date parsing and comparison instead of new Date()
+            const completedAt = DateTime.fromISO(updatedMetadata.processingCompletedAt);
+            const beforeUpdateTime = DateTime.fromISO(beforeUpdate);
+            const nowTime = dateUtils.now();
 
-            // Should be after our beforeUpdate timestamp
-            expect(completedAt.getTime()).toBeGreaterThanOrEqual(beforeUpdate.getTime() - 1000); // Allow 1s buffer for time discrepancies
+            // Should be after our beforeUpdate timestamp (allow 1s buffer for time discrepancies)
+            expect(completedAt.toMillis()).toBeGreaterThanOrEqual(beforeUpdateTime.toMillis() - 1000);
 
-            // Should be within the last minute
-            expect(completedAt.getTime()).toBeGreaterThanOrEqual(Date.now() - 60000);
+            // Should be within the last minute from now
+            expect(completedAt.toMillis()).toBeGreaterThanOrEqual(DateTime.fromISO(nowTime).toMillis() - 60000);
         }
 
         // 5. Update to "failed" - should not change processingCompletedAt

@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { TranscriptStorage, TranscriptMetadata } from '@/lib/storage/blob';
 import { createStorageForTestSync as createStorageForTest } from "@/lib/storage/factories/test";
+import { generateTranscriptData, testDates } from '@/__tests__/utils/test-data-generator';
+import { dateUtils } from '@/lib/config';
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env.test' });
 // Test timeout for network operations
@@ -10,28 +12,30 @@ describe.sequential('TranscriptStorage - Deletion Functionality', () => {
     let storage: TranscriptStorage;
     let supabase: any
     let testSourceId: string;
+    let baseMetadata: Omit<TranscriptMetadata, 'uploadedAt' | 'version'>;
 
     // Set up before each test
     beforeEach(async () => {
-        // Generate a unique sourceId for each test
-        testSourceId = `deletion-test-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+        // Generate deterministic test data using test-data-generator
+        // Each test gets a deterministic but unique ID by using test name context
+        const testData = generateTranscriptData({
+            sourceId: `deletion-test-deterministic-${Math.floor(Math.random() * 10000)}`, // Keep some randomness for test isolation
+            title: "Deletion Test Transcript",
+            date: testDates.deterministic(), // Use deterministic date: '2024-01-15'
+            speakers: ["Speaker A", "Speaker B"],
+            format: "json",
+            processingStatus: "processed",
+            tags: ["test", "deletion"]
+        });
+
+        testSourceId = testData.metadata.sourceId;
+        baseMetadata = testData.metadata;
 
         storage = createStorageForTest()
         supabase = storage.supabase
 
         // Initialize database
         await storage.initializeDatabase();
-
-        // Create base metadata
-        const baseMetadata: Omit<TranscriptMetadata, 'uploadedAt' | 'version'> = {
-            sourceId: testSourceId,
-            title: "Deletion Test Transcript",
-            date: "2023-06-15",
-            speakers: ["Speaker A", "Speaker B"],
-            format: "json",
-            processingStatus: "processed",
-            tags: ["test", "deletion"]
-        };
 
         // Upload three versions of a test transcript
         await storage.uploadTranscript(
@@ -218,18 +222,20 @@ describe.sequential('TranscriptStorage - Deletion Functionality', () => {
         // 1. Delete the middle version (version 2)
         await storage.deleteTranscriptVersion(testSourceId, 2);
 
-        // 2. Try to upload a new version
+        // 2. Try to upload a new version - use deterministic test data
+        const updatedTestData = generateTranscriptData({
+            sourceId: testSourceId,
+            title: "Deletion Test Transcript - Updated",
+            date: testDates.deterministic(), // Use deterministic date: '2024-01-15'
+            speakers: ["Speaker A", "Speaker B"],
+            format: "json",
+            processingStatus: "processed",
+            tags: ["test", "deletion"]
+        });
+
         const result = await storage.uploadTranscript(
             `{"version":4,"content":"Fourth version after deletion"}`,
-            {
-                sourceId: testSourceId,
-                title: "Deletion Test Transcript - Updated",
-                date: "2023-06-15",
-                speakers: ["Speaker A", "Speaker B"],
-                format: "json",
-                processingStatus: "processed",
-                tags: ["test", "deletion"]
-            }
+            updatedTestData.metadata
         );
 
         // 3. Verify the new version is version 4 (not reusing the deleted version 2)

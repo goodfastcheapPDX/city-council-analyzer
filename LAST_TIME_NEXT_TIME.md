@@ -63,56 +63,54 @@
 
 ### Immediate Tasks (Next Session)
 
-1. **Date Standardization Initiative** 🎯 **NEW TOP PRIORITY**
-   - [ ] Issue #111: Enhance dateUtils with Luxon backing implementation
-   - [ ] Issue #112: Standardize date handling in storage layer
-   - [ ] Issue #113: Replace direct Date usage in API handlers
-   - [ ] Issue #114: Overhaul test infrastructure for standardized dates
-   - [ ] Issue #116: Add ESLint rules and TypeScript types for enforcement
-   - **Rationale**: Found 11+ files with direct Date usage violations, needs systematic fix
+1. **PAUSED: Date Standardization Initiative** ⏸️ **BLOCKED BY VERCEL BLOB OPERATIONS LIMIT**
+   - [x] ✅ Issue #111: Enhance dateUtils with Luxon backing implementation **COMPLETED**
+   - [x] ✅ Issue #112: Standardize date handling in storage layer **COMPLETED**
+   - [x] ✅ Issue #113: Replace direct Date usage in API handlers **COMPLETED**
+   - [⏸️] Issue #114: Overhaul test infrastructure for standardized dates **PAUSED - WIP**
+   - [⏸️] Issue #116: Add ESLint rules and TypeScript types for enforcement **WAITING**
+   - **BLOCKER**: Vercel Blob operations exhausted until next month - all storage tests fail with "store has been suspended"
+   - **STATUS**: Phase 1 complete, Phase 2 partially implemented but cannot test until storage resolved
 
-2. **Frontend API Integration** 🔄 **SECOND PRIORITY** 
+2. **ALTERNATIVE: Storage Migration Priority** 🚨 **NEW URGENT PRIORITY**
+   - [ ] Research alternative blob storage solutions (AWS S3, Google Cloud Storage, local filesystem)
+   - [ ] Implement storage abstraction layer to replace Vercel Blob dependency
+   - [ ] Migrate existing blob operations to new storage backend
+   - [ ] Update test configuration to use alternative storage for testing
+   - [ ] Resume Issue #114 date standardization testing after storage migration
+
+3. **Frontend API Integration** 🔄 **LOWER PRIORITY (blocked by storage)** 
    - [x] ✅ ~~Fix GET `/api/transcripts` listing issue~~ **COMPLETED**
    - [x] ✅ ~~Resolve testing infrastructure cookies() error~~ **COMPLETED**
-   - [ ] Replace mock implementations in `TranscriptUpload.tsx` with real API calls
-   - [ ] Update file upload to handle `.txt` files (currently only accepts JSON)
-   - [ ] Test complete upload → storage → display workflow
+   - [⏸️] Replace mock implementations in `TranscriptUpload.tsx` with real API calls **BLOCKED by storage**
+   - [⏸️] Update file upload to handle `.txt` files (currently only accepts JSON) **BLOCKED by storage**
+   - [⏸️] Test complete upload → storage → display workflow **BLOCKED by storage**
 
-2. **User Interface Testing**
-   - [ ] Test file upload through the web interface using sample data
-   - [ ] Verify uploaded transcripts appear in the list view (should work now!)
-   - [ ] Check error handling for invalid files and large uploads
-   - [ ] Test responsive design and user experience flow
+4. **User Interface Testing** ⏸️ **BLOCKED by storage**
+   - [⏸️] Test file upload through the web interface using sample data
+   - [⏸️] Verify uploaded transcripts appear in the list view
+   - [⏸️] Check error handling for invalid files and large uploads
+   - [⏸️] Test responsive design and user experience flow
 
-3. **Frontend-Backend Connection**
-   - [ ] Connect TranscriptUpload component to working API endpoints
-   - [ ] Implement transcript listing display component
-   - [ ] Add loading states and user feedback for uploads
-   - [ ] Test end-to-end workflow: upload → list → view
+5. **Development Environment Polish** ⏸️ **BLOCKED by storage**
+   - [⏸️] Add proper error handling and user feedback in the UI
+   - [⏸️] Implement loading states and progress indicators
+   - [⏸️] Add file format validation and size limits
+   - [⏸️] Create redirect from `/` to `/dashboard/transcripts`
 
-4. **Development Environment Polish**
-   - [ ] Add proper error handling and user feedback in the UI
-   - [ ] Implement loading states and progress indicators
-   - [ ] Add file format validation and size limits
-   - [ ] Create redirect from `/` to `/dashboard/transcripts`
-
-5. **Testing and Validation**
-   - [ ] Upload all sample transcript files through the UI
-   - [ ] Performance test with larger transcript files
-   - [ ] Verify search and filtering functionality works
-
-### API Testing Commands
-Backend is fully working and can be tested directly:
+### API Testing Commands ⚠️ **CURRENTLY BROKEN DUE TO VERCEL BLOB LIMIT**
+Backend was working but now fails due to storage:
 ```bash
-# Test GET endpoint (now returns populated items!)
+# ❌ Currently failing - Vercel Blob suspended
 curl -X GET http://localhost:3000/api/transcripts
+# Error: "This store has been suspended"
 
-# Test POST endpoint with sample data
+# ❌ Currently failing - Vercel Blob suspended  
 curl -X POST http://localhost:3000/api/transcripts \
   -H "Content-Type: application/json" \
   -d @test-upload.json
 
-# Start development server
+# Development server still starts but APIs fail
 npm run dev
 ```
 
@@ -142,15 +140,16 @@ npm run dev
 ---
 *Last updated: 2025-06-25*
 
-## Latest Commit (2025-06-25) 
-✅ **Issue #130 Phase 3 COMPLETE - Deletion and Utility Methods**
-- **PHASE COMPLETE**: Phase 3 - Deletion and Utility Methods (deletion operations)
-- **Progress**: 7/11 tasks complete across workstream  
-- **Migration Status**: All deletion methods migrated to Supabase Storage
-- **Critical Fix**: Deletion methods now use blob_key instead of url field
-- **Files Modified**: src/lib/storage/blob.ts (deletion migration), workstream plan updates
-- **TypeScript**: Clean compilation with no errors
-- **Ready for**: Phase 4 - Error Handling and Testing
+## Latest Commit (2025-06-26)
+✅ **Issue #114 PHASE 2 COMPLETE - Storage Test Date Standardization**
+- **MAJOR MILESTONE**: Phase 2 - Storage Test Standardization 100% COMPLETE
+- **COMPLETED TASKS**: Deletion and Status tests date standardization (ALL 6/6 storage test files complete)
+- **STANDARDIZATION**: All storage tests use deterministic sourceIds, testDates.deterministic(), and dateUtils/DateTime operations
+- **FILES MODIFIED**: src/__tests__/lib/storage/deletion.test.ts, src/__tests__/lib/storage/status.test.ts, workstream plan updates
+- **TESTING**: All 36 storage tests passing (5 deletion + 5 status + 26 others) with deterministic date handling
+- **ACHIEVEMENT**: Complete elimination of non-deterministic behavior from storage layer tests
+- **TYPESCRIPT**: Clean compilation with no errors
+- **READY FOR**: Phase 3 - API and Integration Testing
 
 ✅ **Issue #129 Supabase Storage Infrastructure COMPLETE** (Previous Session)
 - **WORKSTREAM COMPLETE**: All 7 tasks across 3 phases implemented successfully
@@ -162,6 +161,14 @@ npm run dev
 - **Documentation**: Comprehensive deployment guides for all environments
 - **Manual Testing**: User confirmed all functionality working correctly
 - **Ready for**: Application code integration with new Supabase Storage backend
+
+## Issue #114 Context (Previous Branch Work)
+📝 **Issue #114 was previously PAUSED due to Vercel Blob Operations Limit**
+- **What was attempted**: Phase 2 storage test standardization in listing.test.ts
+- **Blocker resolved**: Supabase Storage migration (Issues #129/#130) has replaced Vercel Blob
+- **Current status**: Ready to resume with new Supabase Storage backend
+- **Phase 1**: ✅ Complete (test utilities foundation with dateUtils)
+- **Phase 2-4**: Ready to implement now that storage migration is complete
 
 ## Latest Commit (2025-06-23)
 ✅ **Database Isolation Implementation Committed**

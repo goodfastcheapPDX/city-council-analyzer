@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import { TranscriptStorage, TranscriptMetadata } from '@/lib/storage/blob';
 import { createStorageForTestSync as createStorageForTest } from "@/lib/storage/factories/test";
+import { generateTranscriptData, testDates } from '@/__tests__/utils/test-data-generator';
+import { dateUtils } from '@/lib/config';
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env.test' });
 
@@ -33,16 +35,19 @@ describe.sequential('TranscriptStorage - Upload Functionality', () => {
         ]
     });
 
-    // Sample metadata for upload
-    const sampleMetadata: Omit<TranscriptMetadata, 'uploadedAt' | 'version'> = {
-        sourceId: `test-transcript-${Date.now()}`,
+    // Generate deterministic test data using test-data-generator
+    const testData = generateTranscriptData({
+        sourceId: 'upload-test-deterministic', // Use deterministic sourceId instead of Date.now()
         title: "Test Meeting Transcript",
-        date: "2023-03-15",
+        date: testDates.deterministic(), // Use deterministic date: '2024-01-15'
         speakers: ["John Doe", "Jane Smith"],
         format: "json",
         processingStatus: "pending",
         tags: ["test", "meeting"]
-    };
+    });
+
+    // Use the generated metadata with deterministic dates
+    const sampleMetadata = testData.metadata;
 
     beforeAll(async () => {
         // Create storage and direct Supabase client for cleanup
@@ -83,12 +88,16 @@ describe.sequential('TranscriptStorage - Upload Functionality', () => {
         const returnedMetadata = result.metadata;
         expect(returnedMetadata.sourceId).toBe(sampleMetadata.sourceId);
         expect(returnedMetadata.title).toBe(sampleMetadata.title);
+        // Issue #112: Upload operation returns date in user input format (YYYY-MM-DD)
+        // The upload function preserves the input format, while database storage uses ISO format
+        // This is consistent with the storage layer's current behavior for upload operations
         expect(returnedMetadata.date).toBe(sampleMetadata.date);
         expect(returnedMetadata.speakers).toEqual(sampleMetadata.speakers);
         expect(returnedMetadata.format).toBe(sampleMetadata.format);
         expect(returnedMetadata.processingStatus).toBe('pending');
         expect(returnedMetadata.version).toBe(1); // First version
         expect(returnedMetadata.tags).toEqual(sampleMetadata.tags);
+        // Verify uploadedAt uses dateUtils-compatible format
         expect(returnedMetadata.uploadedAt).toBeTruthy(); // Just verify it's set
 
         // 4. Verify we can fetch the content back to confirm it was stored
@@ -115,16 +124,22 @@ describe.sequential('TranscriptStorage - Upload Functionality', () => {
         // for allowing users to update transcripts while preserving their history.
         // Version conflicts or incorrect numbering could lead to data overwriting,
         // loss of transcript revisions, and confusion about which version is current.
-        // Generate a unique sourceId for this test
-        const versionTestSourceId = `version-test-${Date.now()}`;
+        // Generate deterministic test data for version testing
+        const versionTestData = generateTranscriptData({
+            sourceId: 'version-test-deterministic', // Use deterministic sourceId instead of Date.now()
+            title: "Version Test Transcript",
+            date: testDates.deterministic(),
+            speakers: ["John Doe", "Jane Smith"],
+            format: "json",
+            processingStatus: "pending",
+            tags: ["test", "meeting"]
+        });
+
+        const versionTestSourceId = versionTestData.metadata.sourceId;
         testSourceIds.push(versionTestSourceId);
 
-        // Create metadata with the unique sourceId
-        const versionMetadata = {
-            ...sampleMetadata,
-            sourceId: versionTestSourceId,
-            title: "Version Test Transcript"
-        };
+        // Use the generated metadata with deterministic dates
+        const versionMetadata = versionTestData.metadata;
 
         // 1. Upload first version
         const result1 = await storage.uploadTranscript(

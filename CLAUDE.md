@@ -93,6 +93,7 @@ claude/
 - **Detailed specifications** required for all GitHub issues
 - **Clear dependencies** and acceptance criteria
 - **Property-based testing** requirements included
+- **Use labels when creating github issues. if labels that make sense don't exist yet in the project, create new labels**
 
 **For issue creation standards**: See @claude/rules/backlog-management.md
 
@@ -207,6 +208,11 @@ This document provides essential information for productive development. For det
 ## File Management Guidelines
 
 - We should create txt files using the naming convention {github-issue-#}-short-description.txt in the claude/todos directory to track our work. We should update this file to reflect our progress as we go.
+
+## Memories
+
+### Development Principles
+- Always use the new date lib when working with dates throughout the stack. Never use native date functions or directly use the Luxon lib outside of our config interface. If new date-related needs arise, edit or add to the config date lib
 
 ## Supabase Execution Memories
 
