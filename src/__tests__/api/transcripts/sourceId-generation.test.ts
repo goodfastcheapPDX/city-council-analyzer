@@ -1,5 +1,5 @@
 import { createTranscriptHandlers } from '@/app/api/transcripts/handlers';
-import { createStorageForTest } from '@/lib/storage/factories';
+import { createStorageForTestSync as createStorageForTest } from "@/lib/storage/factories/test";
 import { TranscriptStorage } from '@/lib/storage/blob';
 import { dateUtils } from '@/lib/config';
 import { describe, it, expect, beforeEach } from 'vitest';

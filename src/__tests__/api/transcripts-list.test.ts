@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { describe, test, expect, beforeAll, afterAll } from 'vitest';
-import { createStorageForTest } from '@/lib/storage/factories';
+import { createStorageForTestSync as createStorageForTest } from "@/lib/storage/factories/test";
 import { TranscriptStorage } from '@/lib/storage/blob';
 import { createTranscriptHandlers } from '@/app/api/transcripts/handlers';
 import dotenv from 'dotenv';
