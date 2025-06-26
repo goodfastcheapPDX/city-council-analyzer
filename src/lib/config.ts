@@ -411,16 +411,17 @@ ENABLE_CACHING=true
 
 // next.config.js
 /**
+ * Example Next.js configuration (not used in this module)
+ * 
  * @type {import('next').NextConfig}
+ * const nextConfig = {
+ *     env: {
+ *         ENABLE_PROCESSING: process.env.ENABLE_PROCESSING,
+ *         ENABLE_CACHING: process.env.ENABLE_CACHING,
+ *     },
+ * };
+ * export default nextConfig;
  */
-module.exports = {
-    // Additional configuration for the Next.js application
-    env: {
-        // Make config available on the client side if needed
-        ENABLE_PROCESSING: process.env.ENABLE_PROCESSING,
-        ENABLE_CACHING: process.env.ENABLE_CACHING,
-    },
-};
 
 // Instructions for deployment
 

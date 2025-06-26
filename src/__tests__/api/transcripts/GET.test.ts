@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 import { createTranscriptSourceIdHandlers } from '@/app/api/transcripts/[sourceId]/handlers';
-import { createStorageForTest } from '@/lib/storage/factories';
+import { createStorageForTestSync as createStorageForTest } from "@/lib/storage/factories/test";
 import { TranscriptStorage } from '@/lib/storage/blob';
 import { randomUUID } from 'crypto';
 import dotenv from 'dotenv';

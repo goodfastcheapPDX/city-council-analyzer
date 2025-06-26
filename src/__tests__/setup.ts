@@ -3,7 +3,7 @@
  */
 
 import { beforeAll, beforeEach, afterEach } from 'vitest';
-import { createStorageForTest } from '@/lib/storage/factories';
+import { createStorageForTestSync as createStorageForTest } from "@/lib/storage/factories/test";
 
 // Mock environment variables
 process.env.ENABLE_PROCESSING = 'true';

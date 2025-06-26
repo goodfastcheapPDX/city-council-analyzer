@@ -49,6 +49,14 @@ claude/
 - **AI/ML**: OpenAI embeddings + vector search + RAG pipeline
 - **API**: RESTful endpoints + WebSocket for real-time updates
 
+### Runtime Boundary Rules (Critical)
+- **NEVER mix server and client runtime code in the same file**
+- **Keep browser-specific imports separate from Node.js-specific imports**  
+- **Use environment-specific factory patterns**: `factories/server.ts`, `factories/client.ts`, `factories/test.ts`
+- **API Routes (`app/api/`)**: Only import server-side libraries and factories
+- **Client Components**: Only import client-side libraries and factories
+- **Shared Code**: Keep in separate files with no runtime dependencies (types only)
+
 ## Development Guidelines
 
 ### Development Methodology
@@ -203,3 +211,7 @@ This document provides essential information for productive development. For det
 ## Supabase Execution Memories
 
 - Remember you need to use `npx supabase...` not `supabase...`
+
+## Development Precautions
+
+- We need to remember to be careful about keeping browser runtime code out of server code and vice versa in this repo
