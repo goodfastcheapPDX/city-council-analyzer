@@ -141,15 +141,15 @@ npm run dev
 *Last updated: 2025-06-25*
 
 ## Latest Commit (2025-06-26)
-✅ **Issue #114 Phase 2 Progress - Storage Test Date Standardization**
-- **COMPLETED TASKS**: Retrieval and Upload tests date standardization (3/6 storage test files)
-- **STANDARDIZATION**: Replaced Date.now() with deterministic sourceIds using generateTranscriptData()
-- **CONSISTENCY**: Used testDates.deterministic() for reproducible test dates across environments
-- **DISCOVERY**: Documented storage layer date format behavior (upload preserves user format, database uses ISO)
-- **FILES MODIFIED**: src/__tests__/lib/storage/retrieval.test.ts, src/__tests__/lib/storage/upload.test.ts, workstream plan updates
-- **TESTING**: All 5 tests passing (3 retrieval + 2 upload) with deterministic date handling
+✅ **Issue #114 Phase 2 Progress - Version Test Date Standardization**
+- **COMPLETED TASKS**: Version tests date standardization (4/6 storage test files now complete)
+- **STANDARDIZATION**: Replaced Date.now() with deterministic sourceIds, used testDates.deterministic()
+- **DATE PARSING**: Replaced new Date().getTime() with DateTime.fromISO().toMillis() for Luxon compatibility
+- **PROGRESS**: Phase 2 is 67% complete - substantial progress on storage test standardization
+- **FILES MODIFIED**: src/__tests__/lib/storage/version.test.ts, workstream plan updates
+- **TESTING**: All 6 version tests passing with deterministic date handling and reproducible behavior
 - **TYPESCRIPT**: Clean compilation with no errors
-- **READY FOR**: Continue with version.test.ts (next task in Phase 2)
+- **READY FOR**: Continue with deletion.test.ts (next task in Phase 2)
 
 ✅ **Issue #129 Supabase Storage Infrastructure COMPLETE** (Previous Session)
 - **WORKSTREAM COMPLETE**: All 7 tasks across 3 phases implemented successfully
