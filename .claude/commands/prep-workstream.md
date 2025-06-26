@@ -1,12 +1,17 @@
 # Claude Code: Workstream Planning from GitHub Issue
 
+> **Minimalism Guard**  
+> If the plan or phase you’re about to generate would exceed **25 % of the complexity budget**  
+> (► 200 net LOC, ► 2 new dependencies, ► 0 new cloud services) **or** violates any MVP/YAGNI Gate,  
+> **STOP**. Ask the user which tasks to drop or defer before proceeding.
+
 ## Command Usage
 `/prep-workstream <issue_number>`
 
 Example: `/prep-workstream #114` or `/prep-workstream 114`
 
 ## Initial Setup
-**First, run `Read("CLAUDE.md")`** to understand project structure and conventions. If this fails, continue with generic planning approach.
+**First, run `Read("CLAUDE.md")`** to understand project structure and conventions. Pay special attention to the golden rule: @claude/rules/mvp.md! This is the most important thing to remember while planning workstreams. 
 
 ## Primary Commands
 ```bash
@@ -34,9 +39,13 @@ mkdir -p claude/todos
 - Assess technical complexity and risks
 - Determine required expertise/skills
 
-### 3. **Work Breakdown**
-- Decompose into logical, implementable phases
-- Sequence tasks based on dependencies
+### 3. **MVP Work Breakdown (MVP Gate)**
+- List only the **minimum** tasks that satisfy acceptance criteria.
+- For each task, add “Skip-Impact:” – a one-sentence statement of what would fail if omitted.
+- Move any task without a clear Skip-Impact to **Deferred Ideas** at end of file.
+
+### 3b. **YAGNI Review (YAGNI Gate)**
+- Remove or defer tasks whose Skip-Impact isn’t tied to a broken test or user story.
 
 ### 4. **Risk & Dependency Analysis**
 - Identify external dependencies (APIs, services, teams)
@@ -110,7 +119,7 @@ git checkout main && git pull origin main && git checkout -b <recommended-branch
 
 ## Work Breakdown
 
-### Phase 1: Foundation (Estimated: <Total effort>)
+### Phase 1: MVP Skateboard  (≤ 1 dev-day, ≤ 200 net LOC)
 - [ ] **Task 1** - <Description>
   - **Details:** <Implementation notes>
   - **Dependencies:** <What must be done first>

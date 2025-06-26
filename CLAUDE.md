@@ -2,11 +2,20 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+THE MOST IMPORTANT RULE IS @claude/rules/mvp.md. MVP is the golden rule!
+
+| Gate           | What it must do                                                                                                                          | Fail condition                                                      |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| **MVP Gate**   | Claude lists **only** the tasks strictly needed to satisfy each acceptance criterion once. Anything else is pushed to “Deferred Ideas.”  | If MVP tasks don’t map 1-to-1 to criteria, abort plan generation.   |
+| **YAGNI Gate** | For every proposed task, Claude must answer: “What breaks if we skip this?” If the answer is vague or speculative, move task to backlog. | If ≥1 task lacks a concrete breakage description, plan is rejected. |
+
+
 ## Project Overview
 
-This is a Next.js application called "transcript-analysis-system" that manages city council transcript uploads, storage, and analysis. The system uses Vercel Blob Storage for file storage and Supabase for metadata persistence.
+This is a Next.js application called "transcript-analysis-system" that manages city council transcript uploads, storage, and analysis. The system uses Supabase Storage for file storage and Supabase for metadata persistence and vector embeddings.
 
 **For detailed architecture**: See @claude/architecture-plan.md
+**For current milestone plan**: See @claude/milestone-restructure-v2.md
 
 ## Quick Reference
 
@@ -38,16 +47,19 @@ src/
 └── __tests__/              # Test utilities and setup
 
 claude/
-├── architecture-plan.md    # Complete system architecture
-├── implementation-roadmap.md # 48-issue development roadmap
-└── rules/                  # Project-specific automation rules
+├── architecture-plan.md         # Complete system architecture  
+├── milestone-restructure-v2.md  # Current MVP milestone plan (ACTIVE)
+├── implementation-roadmap-v2.md # Revised roadmap with deferred issues
+├── implementation-roadmap.md    # Legacy 48-issue roadmap (DEPRECATED)
+└── rules/                       # Project-specific automation rules
 ```
 
 ### Core Architecture
-- **Storage**: Vercel Blob (files) + Supabase (metadata + vectors)
+- **Storage**: Supabase Storage (files) + Supabase (metadata + vectors)
 - **Processing**: Multi-stage pipeline with job queue
 - **AI/ML**: OpenAI embeddings + vector search + RAG pipeline
 - **API**: RESTful endpoints + WebSocket for real-time updates
+- **Logging**: Structured logging with Adze for observability and debugging
 
 ### Runtime Boundary Rules (Critical)
 - **NEVER mix server and client runtime code in the same file**
@@ -73,6 +85,53 @@ claude/
 - I keep the dev server running in a separate tab for efficiency.
 
 **For workflow optimization guidelines**: See @claude/rules/development-workflow-strategy.md
+
+#### Available Github Issue Labels
+| Label                       | Description                                                                                                                                              |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **scope:🛹**                | **Skateboard** – first, smallest end-to-end slice that delivers real user value; proves the concept and lets the team learn fast (absolute MVP).         |
+| **scope:🛴**                | **Scooter** – incremental upgrade on the skateboard: still simple, but adds stability and a better user-experience while preserving the end-to-end flow. |
+| **scope:🚲**                | **Bicycle** – robust, production-viable version with higher performance and usability; covers most core use-cases but with room to grow.                 |
+| **scope:🏍️**               | **Motorcycle** – high-performance, near-final solution; advanced features and scalability for heavier usage, yet still leaner than the full vision.      |
+| **scope:🚗**                | **Car** – fully featured, polished product that fulfills the original vision with complete functionality, reliability, and comfort.                      |
+| **scope\:yagni?**           | Ask whether we will ever truly need this; if no, close the issue (You Ain’t Gonna Need It).                                                              |
+| **status\:blocked**         | Waiting on external or internal dependencies.                                                                                                            |
+| **status\:deferred**        | Archived until a later date; revisit when priorities or context change.                                                                                  |
+| **status\:in-progress**     | Actively being worked on by an assignee.                                                                                                                 |
+| **status\:ready**           | All dependencies met; work can start immediately.                                                                                                        |
+| **status\:review**          | Implementation complete; needs testing and/or code review.                                                                                               |
+| **status\:unclear**         | Requires clarification or further development.                                                                                                           |
+| **workstream\:bug**         | Something isn’t working as expected; requires a fix.                                                                                                     |
+| **workstream\:docs**        | Improvements or additions to documentation.                                                                                                              |
+| **workstream\:duplicate**   | This issue or pull request already exists elsewhere.                                                                                                     |
+| **workstream\:enhancement** | New feature request or significant improvement.                                                                                                          |
+| **workstream\:invalid**     | The report is not actionable or is incorrect.                                                                                                            |
+| **workstream\:question**    | Further information or clarification requested.                                                                                                          |
+| **workstream\:testing**     | Testing improvements, coverage, or infrastructure.                                                                                                       |
+| **workstream\:wontfix**     | Acknowledged but will not be worked on (out of scope or low value).                                                                                      |
+| **P0**                      | Someday / idea.                                                                                                                                          |
+| **P1**                      | Low priority.                                                                                                                                            |
+| **P2**                      | Medium priority.                                                                                                                                         |
+| **P3**                      | High priority.                                                                                                                                           |
+| **P4**                      | Critical / urgent.                                                                                                                                       |
+
+##### Good Examples
+| # | Practice                                                             | Example                                                                             |
+| - | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| 1 | **Single source of truth** per category (scope + status + priority). | `scope:🛹`, `status:ready`, `P3` — nothing redundant.                               |
+| 2 | **Mutually exclusive, collectively exhaustive** labels.              | Only one of `status:*` may be present; pipelines enforce swap when state changes.   |
+| 3 | **Consistent color semantics** across repos.                         | Greens = status, Blues = scope, Reds = priority → visual scan tells pipeline stage. |
+| 4 | **Automated pruning of stale labels**.                               | CI bot strips `status:in-progress` when PR merged, adds `status:review`.            |
+| 5 | **Docs live next to labels**.                                        | `docs/labels.md` links each label to a one-sentence rule and onboarding quiz.       |
+
+##### Bad Examples
+| # | Anti-Pattern                               | Illustration                                                                                                                             |
+| - | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 | **Label soup** — ten+ labels that overlap. | `bug`, `defect`, `error`, `failure`, `broken🔧`, `scope:🚗` on the same issue.                                                           |
+| 2 | **Conflicting states**.                    | An issue tagged both `status:blocked` and `status:ready`.                                                                                |
+| 3 | **Color chaos**.                           | Random pastel palette where `P4` is pale mint and `scope:🛹` is dark red.                                                                |
+| 4 | **Forgotten YAGNI flags**.                 | Issue closed months ago still marked `scope:yagni?`, confusing search filters.                                                           |
+| 5 | **Free-text brainstorm** as labels.        | Adding ad-hoc labels like `needs-brainstorm`, `maybe-later?`, `experimental-ish` instead of using `status:unclear` or `status:deferred`. |
 
 ### Testing Strategy
 - **Property-based testing** with Fast-Check for edge cases
@@ -128,9 +187,9 @@ claude/
 ### Required Environment Variables
 ```bash
 # Storage
-BLOB_READ_WRITE_TOKEN=your_vercel_blob_token
 SUPABASE_URL=your_supabase_url
-SUPABASE_KEY=your_supabase_service_key
+SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_key
 
 # AI Services (for embeddings and analysis)
 OPENAI_API_KEY=your_openai_key
@@ -142,8 +201,9 @@ GITHUB_TOKEN=your_github_token
 ### Project Configuration
 Key settings in @src/lib/config.ts:
 - **Token limits**: 4000 max per segment, 200 overlap
-- **Storage**: 30-day expiration, 10MB max file size
+- **Storage**: 50MB max file size via Supabase Storage
 - **Processing**: Configurable quality levels and strategies
+- **Logging**: Environment-aware structured logging with Adze (correlation IDs, performance timing)
 
 ## Claude Rules System
 
@@ -172,19 +232,29 @@ This repository includes automated guidance in the @claude directory:
 
 ## Implementation Status
 
-### Phase 1: Foundation (P0) - Ready for Development
-6 issues immediately implementable:
-- Database schema and API middleware
-- Blob storage and validation systems  
-- Multi-format parsers and token counting
+### 🚨 **MAJOR ROADMAP RESTRUCTURE COMPLETED** (2025-06-26)
+The project has undergone a comprehensive milestone restructure based on critique and analysis:
 
-### Phase 2: Intelligence (P1) - Blocked by P0
-6 issues for vector embeddings and search
+- **18 infrastructure issues deferred** with `scope:yagni?` tag (logging, testing, config refactoring)
+- **Critical path unblocked**: Issues #76, #80, #81, #82 ready for 🛹 milestone
+- **New milestone approach**: 5 progressive stages (🛹🛴🚲🏍️🚗) focused on user value delivery
+- **Token-optimized planning**: Development blocks sized for 5-hour constraint windows
 
-### Phase 3: Analysis (P2) - Blocked by P1  
-3 issues for RAG pipeline and LLM integration
+### Current Milestone Status
+- **🛹 Skateboard**: Basic Upload & Browse (Issues #76, #80, #81, #82, #154, #155) - **READY TO START**
+- **🛴 Scooter**: Keyword Search (Issues #156, #157, #158) - **BLOCKED BY 🛹**
+- **🚲 Bicycle**: Speaker Attribution - **BLOCKED BY 🛴**
+- **🏍️ Motorcycle**: Semantic Search - **BLOCKED BY 🚲**
+- **🚗 Car**: Advanced Analytics - **BLOCKED BY 🏍️**
 
-**For complete roadmap**: See @claude/implementation-roadmap.md
+### Recently Completed Infrastructure  
+- ✅ **Supabase Storage Migration** (Issue #129/#130) - Complete replacement of Vercel Blob
+- ✅ **Structured Logging System** (Issue #141) - Adze-based logging with correlation IDs
+- ✅ **Date Standardization** (Issues #111-#113) - dateUtils library with Luxon backing
+- ✅ **Roadmap Restructure** (2025-06-26) - MVP-focused milestone approach implemented
+
+**For current milestone plan**: See @claude/milestone-restructure-v2.md  
+**For revised technical roadmap**: See @claude/implementation-roadmap-v2.md
 
 ## Key Constraints
 
@@ -220,21 +290,22 @@ This approach ensures no time is wasted figuring out where development left off 
 
 This document provides essential information for productive development. For detailed specifications, consult the architecture plan and implementation roadmap in the `claude/` directory.
 
-## File Management Guidelines
+## Development Memories
 
-- We should create txt files using the naming convention {github-issue-#}-short-description.txt in the claude/todos directory to track our work. We should update this file to reflect our progress as we go.
+### Core Development Principles
+- **MVP Milestone Approach**: Follow the 🛹🛴🚲🏍️🚗 progression. Each stage must deliver complete user value before proceeding to the next.
+- **YAGNI-First Planning**: For every proposed task, answer "What breaks if we skip this?" Vague answers move to backlog.
+- **Token-Constrained Development**: Size work for 5-hour development windows (1-2 development blocks per milestone).
+- **Minimal Solution Approach**: Always write the minimum possible code to satisfy a requirement. Think skateboard → scooter → bike → motorcycle → car. Avoid frame → engine → body → interior → car
+- **Date Handling**: Always use the new date lib when working with dates throughout the stack. Never use native Date functions or directly use the Luxon lib outside of our config interface
+- **Runtime Boundaries**: Keep browser-specific imports separate from Node.js-specific imports (see Runtime Boundary Rules above)
 
-## Memories
+### Technical Implementation Memories
+- **Milestone-First Issue Creation**: Always tag new issues with appropriate scope emoji (🛹🛴🚲🏍️🚗)
+- **Infrastructure Deferral**: Tag non-critical infrastructure work as `status:deferred` + `scope:yagni?` for later review
+- **Critical Path Focus**: Prioritize issues marked `status:ready` in current milestone before creating new work
+- **Supabase CLI**: Use `npx supabase...` not `supabase...`
+- **TypeScript Types**: Prefer `as const` for types with finite known permutations
+- **GitHub Issues**: Use status labels (status:blocked, status:review, status:in-progress, status:ready) and organize related issues into epics with the epic label
 
-### Development Principles
-- **Date Handling Enforcement**: Always use `dateUtils` and `typedDateUtils` from `@/lib/config`. NEVER use `new Date()`, `Date.now()`, or direct Luxon imports. ESLint rules enforce this with helpful error messages pointing to correct alternatives.
-- **Type Safety**: Use branded date types (`DatabaseDateString`, `UserInputDateString`, `DisplayDateString`) for compile-time safety and runtime validation.
-- **Testing**: Use `dateUtils.testDate()` for deterministic test dates. All storage tests use standardized date utilities for consistency.
-
-## Supabase Execution Memories
-
-- Remember you need to use `npx supabase...` not `supabase...`
-
-## Development Precautions
-
-- We need to remember to be careful about keeping browser runtime code out of server code and vice versa in this repo
+**For detailed development guidance**: See @claude/rules/development-memories.md

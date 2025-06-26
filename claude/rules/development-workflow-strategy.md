@@ -156,6 +156,11 @@ docs: update session tracking
 
 ## Implementation Guidelines
 
+### Complexity Budget:
+- ≤200 net LOC per phase
+- ≤2 external dependencies added per issue
+- Zero new cloud services unless an acceptance criterion explicitly says so
+
 ### Pre-Work Planning Checklist
 Before starting any GitHub issue:
 - [ ] Analyze dependencies - what must complete first?

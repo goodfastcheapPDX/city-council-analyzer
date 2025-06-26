@@ -49,6 +49,11 @@ For commits referencing issues (e.g., "fixes #123", "closes #456"):
 
 **Also ignore hunks with >500 added lines** to focus on reviewable changes.
 
+> **Minimalism Guard**  
+> If the plan or phase under review would exceed **25 % of the complexity budget**  
+> (► 200 net LOC, ► 2 new dependencies, ► 0 new cloud services) **or** violates any MVP/YAGNI Gate,  
+> **STOP**. Ask the user which tasks to drop or defer before proceeding.
+
 ## Required Output Structure
 
 Write the following to **`pr_review.md`** in the repository root:
