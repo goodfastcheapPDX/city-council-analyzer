@@ -6,7 +6,7 @@
 Example: `/prep-workstream #114` or `/prep-workstream 114`
 
 ## Initial Setup
-**First, run `Read("CLAUDE.md")`** to understand project structure and conventions. If this fails, continue with generic planning approach.
+**First, run `Read("CLAUDE.md")`** to understand project structure and conventions. Pay special attention to the golden rule: @claude/rules/mvp.md! This is the most important thing to remember while planning workstreams. 
 
 ## Primary Commands
 ```bash

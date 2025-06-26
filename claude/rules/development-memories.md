@@ -13,13 +13,6 @@ Apply this rule when:
 
 ## Core Development Principles
 
-### Minimal Solution Approach
-- **Philosophy**: Always write the minimum possible code to satisfy a requirement
-- **Progression Model**: Think skateboard → scooter → bike → motorcycle → car
-- **Anti-Pattern**: Avoid frame → engine → body → interior → car approach
-- **Implementation**: Build the narrowest possible solution to the specific problem statement
-- **Iteration**: Add complexity only when requirements explicitly demand it
-
 ### Runtime Boundary Enforcement
 - **Critical Rule**: NEVER mix server and client runtime code in the same file
 - **Browser vs Node**: Keep browser-specific imports separate from Node.js-specific imports
