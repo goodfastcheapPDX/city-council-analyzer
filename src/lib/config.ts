@@ -402,5 +402,134 @@ export const config = {
          * This tries to split at topic boundaries
          */
         enableSemanticSegmentation: true,
+    },
+
+    // Logging configuration
+    logging: {
+        /**
+         * Default log level for the application
+         * Can be overridden by LOG_LEVEL environment variable
+         */
+        level: (process.env.LOG_LEVEL as 'silent' | 'error' | 'warn' | 'info' | 'debug') || 
+               (process.env.NODE_ENV === 'test' ? 'warn' : 
+                process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
+
+        /**
+         * Whether to enable JSON formatting for logs
+         * Automatically enabled in production for log aggregation
+         */
+        enableJson: process.env.LOG_FORMAT === 'json' || process.env.NODE_ENV === 'production',
+
+        /**
+         * Whether to enable colored output in logs
+         * Disabled in production and test environments
+         */
+        enableColors: process.env.LOG_COLORS !== 'false' && 
+                     process.env.NODE_ENV !== 'production' && 
+                     process.env.NODE_ENV !== 'test',
+
+        /**
+         * Whether to include timestamps in logs
+         * Always enabled except for tests
+         */
+        enableTimestamp: process.env.LOG_TIMESTAMP !== 'false' && process.env.NODE_ENV !== 'test',
+
+        /**
+         * Whether to enable correlation tracking
+         * Disabled only if explicitly set to false
+         */
+        enableCorrelation: process.env.LOG_CORRELATION !== 'false',
+
+        /**
+         * Whether to enable performance timing in logs
+         * Enabled by default, can be disabled for performance
+         */
+        enableTiming: process.env.LOG_TIMING !== 'false',
+
+        /**
+         * Minimum duration (in ms) for timing logs
+         * Operations faster than this won't generate timing logs
+         */
+        timingThreshold: parseInt(process.env.LOG_TIMING_THRESHOLD || '100', 10),
+
+        /**
+         * Maximum age for correlation contexts (in ms)
+         * Older contexts will be cleaned up automatically
+         */
+        correlationMaxAge: parseInt(process.env.LOG_CORRELATION_MAX_AGE || '300000', 10), // 5 minutes
+
+        /**
+         * Default namespaces for different parts of the application
+         */
+        namespaces: {
+            api: 'api',
+            storage: 'storage',
+            error: 'error',
+            middleware: 'middleware',
+            processing: 'processing',
+            auth: 'auth',
+            test: 'test',
+        } as const,
+
+        /**
+         * Environment-specific overrides
+         */
+        environments: {
+            development: {
+                level: 'debug' as const,
+                enableJson: false,
+                enableColors: true,
+                enableTimestamp: true,
+            },
+            test: {
+                level: 'warn' as const,
+                enableJson: false,
+                enableColors: false,
+                enableTimestamp: false,
+            },
+            production: {
+                level: 'info' as const,
+                enableJson: true,
+                enableColors: false,
+                enableTimestamp: true,
+            },
+        } as const,
+
+        /**
+         * Headers for correlation ID extraction
+         * Checked in order of preference
+         */
+        correlationHeaders: [
+            'x-correlation-id',
+            'x-request-id',
+            'x-trace-id',
+            'correlation-id',
+            'request-id',
+        ] as const,
+
+        /**
+         * Performance monitoring configuration
+         */
+        performance: {
+            /**
+             * Operations that should always be timed
+             */
+            alwaysTime: [
+                'api_request',
+                'db_query',
+                'blob_upload',
+                'blob_download',
+                'processing_pipeline',
+            ] as const,
+
+            /**
+             * Operations that should only be timed if they exceed the threshold
+             */
+            conditionalTime: [
+                'validation',
+                'parsing',
+                'segmentation',
+            ] as const,
+        } as const,
     }
 } as const;

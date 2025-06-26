@@ -221,3 +221,10 @@ This document provides essential information for productive development. For det
 ## Development Precautions
 
 - We need to remember to be careful about keeping browser runtime code out of server code and vice versa in this repo
+
+### TypeScript Type Memories
+- When creating typescript types and interfaces, always prefer `as const` for types with finite known permutations
+
+### GitHub Issue Management Memories
+- Use the github api to update issues with status labels while you work. these include status:blocked, status:review, status:in-progress, status:ready
+- When creating github issues, try to organize them into epics if more than 3 issues are meaningfully related. do this by using the epic label for the parent issue, and referencing the epic in the child issues. there's no convenient way to literally relate issues as sub-issues using the gh tool, so don't bother. it's enough to reference them
