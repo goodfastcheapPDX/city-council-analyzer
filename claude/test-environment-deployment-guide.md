@@ -129,7 +129,7 @@ WHERE id = 'transcripts';
 ```bash
 # Test file upload (adjust endpoint for your test project)
 curl -X POST 'https://znybssicqofaendbrnbt.supabase.co/storage/v1/object/transcripts/test-file.json' \
-  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpueWJzc2ljcW9mYWVuZGJybmJ0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDY0OTA5OCwiZXhwIjoyMDY2MjI1MDk4fQ.dLCUBWB_Wibc5xYmvNFbzrDRGm5ZqKCEqoArIUsf1qo' \
+  -H 'Authorization: Bearer {key}' \
   -H 'Content-Type: application/json' \
   --data-binary '@sample-data/city-council-2024-01-15.txt'
 
