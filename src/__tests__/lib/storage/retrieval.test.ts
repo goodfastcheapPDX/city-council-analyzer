@@ -3,10 +3,9 @@ import { TranscriptStorage, TranscriptMetadata } from '@/lib/storage/blob';
 import { DateTime } from 'luxon';
 import { createStorageForTestSync as createStorageForTest } from "@/lib/storage/factories/test";
 import { dateUtils } from '@/lib/config';
+import { generateTranscriptData, testDates } from '@/__tests__/utils/test-data-generator';
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env.test' });
-
-
 
 // Test timeout for network operations
 const TIMEOUT = 15000;
@@ -14,25 +13,27 @@ const TIMEOUT = 15000;
 describe.sequential('TranscriptStorage - Retrieval Functionality', () => {
     let storage: TranscriptStorage;
 
-    // Test data
-    const testSourceId = `retrieval-test-${Date.now()}`;
+    // Generate deterministic test data using test-data-generator
+    const testData = generateTranscriptData({
+        sourceId: 'retrieval-test-deterministic', // Use deterministic sourceId instead of Date.now()
+        title: "Test Retrieval Transcript",
+        date: testDates.deterministic(), // Use deterministic date: '2024-01-15'
+        speakers: ["Speaker A", "Speaker B"],
+        format: "json",
+        processingStatus: "processed",
+        processingCompletedAt: dateUtils.now(), // Use dateUtils.now() instead of new Date()
+        tags: ["test", "retrieval"]
+    });
+
+    const testSourceId = testData.metadata.sourceId;
     const testContent = {
         v1: `{"version":1,"content":"This is version 1 of the test transcript"}`,
         v2: `{"version":2,"content":"This is version 2 with some additional content"}`,
         v3: `{"version":3,"content":"This is version 3, the latest version of this transcript"}`
     };
 
-    // Create a base metadata object
-    const baseMetadata: Omit<TranscriptMetadata, 'uploadedAt' | 'version'> = {
-        sourceId: testSourceId,
-        title: "Test Retrieval Transcript",
-        date: "2023-04-15", // Use simple YYYY-MM-DD format as expected by validation
-        speakers: ["Speaker A", "Speaker B"],
-        format: "json",
-        processingStatus: "processed",
-        processingCompletedAt: new Date().toISOString(),
-        tags: ["test", "retrieval"]
-    };
+    // Use the generated metadata with deterministic dates
+    const baseMetadata = testData.metadata;
 
     // Set up before tests
     beforeAll(async () => {
@@ -77,9 +78,11 @@ describe.sequential('TranscriptStorage - Retrieval Functionality', () => {
         // 3. Verify complete metadata
         const metadata = result.metadata;
         expect(metadata.title).toBe(baseMetadata.title);
-        // Database responses are normalized to standardized Z format via dateUtils.toDatabase()
+        // Database responses are normalized to standardized Z format via dateUtils.userInputToDatabase()
         // Issue #112: All dates now consistently use Z format for system-wide compatibility
-        expect(metadata.date).toBe('2023-04-15T00:00:00.000Z');
+        // Use dateUtils to verify the expected database format instead of hardcoded string
+        const expectedDatabaseDate = dateUtils.userInputToDatabase(testDates.deterministic());
+        expect(metadata.date).toBe(expectedDatabaseDate);
         expect(metadata.speakers).toEqual(baseMetadata.speakers);
         expect(metadata.format).toBe(baseMetadata.format);
         expect(metadata.processingStatus).toBe('processed');

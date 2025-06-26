@@ -140,15 +140,16 @@ npm run dev
 ---
 *Last updated: 2025-06-25*
 
-## Latest Commit (2025-06-25) 
-✅ **Issue #130 Phase 3 COMPLETE - Deletion and Utility Methods**
-- **PHASE COMPLETE**: Phase 3 - Deletion and Utility Methods (deletion operations)
-- **Progress**: 7/11 tasks complete across workstream  
-- **Migration Status**: All deletion methods migrated to Supabase Storage
-- **Critical Fix**: Deletion methods now use blob_key instead of url field
-- **Files Modified**: src/lib/storage/blob.ts (deletion migration), workstream plan updates
-- **TypeScript**: Clean compilation with no errors
-- **Ready for**: Phase 4 - Error Handling and Testing
+## Latest Commit (2025-06-26)
+✅ **Issue #114 Phase 2 Progress - Storage Test Date Standardization**
+- **COMPLETED TASKS**: Retrieval and Upload tests date standardization (3/6 storage test files)
+- **STANDARDIZATION**: Replaced Date.now() with deterministic sourceIds using generateTranscriptData()
+- **CONSISTENCY**: Used testDates.deterministic() for reproducible test dates across environments
+- **DISCOVERY**: Documented storage layer date format behavior (upload preserves user format, database uses ISO)
+- **FILES MODIFIED**: src/__tests__/lib/storage/retrieval.test.ts, src/__tests__/lib/storage/upload.test.ts, workstream plan updates
+- **TESTING**: All 5 tests passing (3 retrieval + 2 upload) with deterministic date handling
+- **TYPESCRIPT**: Clean compilation with no errors
+- **READY FOR**: Continue with version.test.ts (next task in Phase 2)
 
 ✅ **Issue #129 Supabase Storage Infrastructure COMPLETE** (Previous Session)
 - **WORKSTREAM COMPLETE**: All 7 tasks across 3 phases implemented successfully
