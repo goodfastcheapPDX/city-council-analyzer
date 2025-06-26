@@ -3,6 +3,8 @@ import { describe, test, expect, beforeAll, afterAll } from 'vitest';
 import { createStorageForTestSync as createStorageForTest } from "@/lib/storage/factories/test";
 import { TranscriptStorage } from '@/lib/storage/blob';
 import { createTranscriptHandlers } from '@/app/api/transcripts/handlers';
+import { generateTranscriptData, testDates } from '@/__tests__/utils/test-data-generator';
+import { dateUtils } from '@/lib/config';
 import dotenv from 'dotenv';
 
 // Test timeout for network operations
@@ -25,21 +27,40 @@ describe('GET /api/transcripts - Listing Endpoint Integration', () => {
         // Initialize database
         await storage.initializeDatabase();
 
-        // Create test transcripts to ensure we have data
+        // Create test transcripts to ensure we have data using deterministic generation
+        // This ensures reproducible API test results across environments
+        const testTranscript1 = generateTranscriptData({
+            sourceId: 'api-list-test-1-deterministic',
+            title: "Test Meeting 1",
+            date: testDates.deterministic(), // '2024-01-15'
+            speakers: ["Alice", "Bob"],
+            format: "json",
+            processingStatus: "processed"
+        });
+        
+        const testTranscript2 = generateTranscriptData({
+            sourceId: 'api-list-test-2-deterministic',
+            title: "Test Meeting 2", 
+            date: testDates.recent(), // Relative to current time but deterministic within test run
+            speakers: ["Charlie", "Dave"],
+            format: "json",
+            processingStatus: "processed"
+        });
+
         const testTranscripts = [
             {
-                sourceId: `list-bug-test-1-${Date.now()}`,
-                title: "Test Meeting 1",
-                date: "2024-01-15",
-                speakers: ["Alice", "Bob"],
-                content: `{"meeting":"Test Meeting 1"}`
+                sourceId: testTranscript1.metadata.sourceId,
+                title: testTranscript1.metadata.title,
+                date: testTranscript1.metadata.date,
+                speakers: testTranscript1.metadata.speakers,
+                content: testTranscript1.content
             },
             {
-                sourceId: `list-bug-test-2-${Date.now()}`,
-                title: "Test Meeting 2", 
-                date: "2024-02-10",
-                speakers: ["Charlie", "Dave"],
-                content: `{"meeting":"Test Meeting 2"}`
+                sourceId: testTranscript2.metadata.sourceId,
+                title: testTranscript2.metadata.title,
+                date: testTranscript2.metadata.date,
+                speakers: testTranscript2.metadata.speakers,
+                content: testTranscript2.content
             }
         ];
 
@@ -52,7 +73,7 @@ describe('GET /api/transcripts - Listing Endpoint Integration', () => {
                 speakers: transcript.speakers,
                 format: "json",
                 processingStatus: "processed",
-                processingCompletedAt: new Date().toISOString()
+                processingCompletedAt: dateUtils.now() // Use dateUtils for consistent timestamp generation
             });
 
             testSourceIds.push(transcript.sourceId);

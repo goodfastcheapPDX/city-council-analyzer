@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
 import { dateUtils, dateFormats, typedDateUtils, DatabaseDateString, UserInputDateString, DisplayDateString } from '@/lib/config';
+import { DateTime } from 'luxon';
 
 describe('Date Utilities - Single Source of Truth', () => {
     describe('dateUtils.userInputToDatabase', () => {
@@ -129,18 +130,20 @@ describe('Date Utilities - Single Source of Truth', () => {
             
             expect(now).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/);
             
-            // Should be a valid ISO string
-            const parsedDate = new Date(now);
-            expect(parsedDate.toISOString()).toBe(now);
+            // Should be a valid ISO string  
+            const parsedDate = DateTime.fromISO(now);
+            expect(parsedDate.isValid).toBe(true);
+            // dateUtils.now() always returns UTC format, so we verify UTC conversion
+            expect(parsedDate.toUTC().toISO()).toBe(now);
         });
 
         it('should return timestamps close to actual time', () => {
             // This test ensures that generated timestamps are accurate to the current time,
             // which is critical for audit trails, version tracking, and chronological
             // ordering of transcript operations throughout the system.
-            const before = new Date().toISOString();
+            const before = DateTime.now().toUTC().toISO()!;
             const generated = dateUtils.now();
-            const after = new Date().toISOString();
+            const after = DateTime.now().toUTC().toISO()!;
             
             expect(generated >= before).toBe(true);
             expect(generated <= after).toBe(true);
@@ -152,7 +155,7 @@ describe('Date Utilities - Single Source of Truth', () => {
             // This test ensures that Date objects are correctly converted to database format,
             // maintaining consistency when different parts of the system provide
             // Date objects instead of strings for database storage operations.
-            const date = new Date('2024-01-15T10:30:00.000Z');
+            const date = DateTime.fromISO('2024-01-15T10:30:00.000Z').toJSDate();
             const dbFormat = dateUtils.toDatabase(date);
             
             expect(dbFormat).toBe('2024-01-15T10:30:00.000Z');
@@ -183,7 +186,7 @@ describe('Date Utilities - Single Source of Truth', () => {
             // all possible input combinations correctly, maintaining system stability
             // when processing dates from various sources and formats.
             const testInputs = [
-                new Date('2024-01-15'),
+                DateTime.fromISO('2024-01-15').toJSDate(),
                 '2024-01-15',
                 '2024-01-15T10:30:00.000Z'
             ];
@@ -193,7 +196,10 @@ describe('Date Utilities - Single Source of Truth', () => {
                 expect(result).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/);
                 
                 // Should be a valid date
-                expect(new Date(result).toISOString()).toBe(result);
+                const parsedResult = DateTime.fromISO(result);
+                expect(parsedResult.isValid).toBe(true);
+                // dateUtils.toDatabase() always returns UTC format, so we verify UTC conversion
+                expect(parsedResult.toUTC().toISO()).toBe(result);
             });
         });
     });
@@ -227,8 +233,8 @@ describe('Date Utilities - Single Source of Truth', () => {
             // Simulate storage workflow
             const forStorage = dateUtils.toDatabase(userInputDate);
             
-            // Simulate what database returns (with timezone)
-            const fromDatabase = new Date(forStorage).toISOString();
+            // Simulate what database returns (in UTC format as dateUtils expects)  
+            const fromDatabase = DateTime.fromISO(forStorage).toUTC().toISO()!;
             
             // Convert back for user display
             const forDisplay = dateUtils.databaseToUserInput(fromDatabase);
@@ -453,7 +459,7 @@ describe('Date Utilities - Single Source of Truth', () => {
                 // This test ensures that invalid Date objects are properly
                 // rejected, preventing silent failures when converting
                 // potentially corrupted Date instances to database format.
-                const invalidDate = new Date('invalid-date');
+                const invalidDate = DateTime.fromISO('invalid-date').toJSDate();
                 
                 expect(() => dateUtils.toDatabase(invalidDate))
                     .toThrow(/Invalid Date object provided/);
