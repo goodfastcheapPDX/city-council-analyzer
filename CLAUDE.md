@@ -15,6 +15,7 @@ THE MOST IMPORTANT RULE IS @claude/rules/mvp.md. MVP is the golden rule!
 This is a Next.js application called "transcript-analysis-system" that manages city council transcript uploads, storage, and analysis. The system uses Supabase Storage for file storage and Supabase for metadata persistence and vector embeddings.
 
 **For detailed architecture**: See @claude/architecture-plan.md
+**For current milestone plan**: See @claude/milestone-restructure-v2.md
 
 ## Quick Reference
 
@@ -46,9 +47,11 @@ src/
 └── __tests__/              # Test utilities and setup
 
 claude/
-├── architecture-plan.md    # Complete system architecture
-├── implementation-roadmap.md # 48-issue development roadmap
-└── rules/                  # Project-specific automation rules
+├── architecture-plan.md         # Complete system architecture  
+├── milestone-restructure-v2.md  # Current MVP milestone plan (ACTIVE)
+├── implementation-roadmap-v2.md # Revised roadmap with deferred issues
+├── implementation-roadmap.md    # Legacy 48-issue roadmap (DEPRECATED)
+└── rules/                       # Project-specific automation rules
 ```
 
 ### Core Architecture
@@ -214,23 +217,29 @@ This repository includes automated guidance in the @claude directory:
 
 ## Implementation Status
 
-### Recently Completed Infrastructure
-- ✅ **Supabase Storage Migration** (Issue #129/#130) - Complete replacement of Vercel Blob with Supabase Storage
-- ✅ **Structured Logging System** (Issue #141) - Adze-based logging with correlation IDs and performance timing
-- ✅ **Date Standardization** (Issues #111-#113) - dateUtils library with Luxon backing, UTC enforcement
+### 🚨 **MAJOR ROADMAP RESTRUCTURE COMPLETED** (2025-06-26)
+The project has undergone a comprehensive milestone restructure based on critique and analysis:
 
-### Phase 1: Foundation (P0) - Core Infrastructure Complete
-✅ Database schema and API middleware
-✅ Supabase storage and validation systems  
-✅ Multi-format parsers and token counting
+- **18 infrastructure issues deferred** with `scope:yagni?` tag (logging, testing, config refactoring)
+- **Critical path unblocked**: Issues #76, #80, #81, #82 ready for 🛹 milestone
+- **New milestone approach**: 5 progressive stages (🛹🛴🚲🏍️🚗) focused on user value delivery
+- **Token-optimized planning**: Development blocks sized for 5-hour constraint windows
 
-### Phase 2: Intelligence (P1) - Ready for Development  
-6 issues for vector embeddings and search
+### Current Milestone Status
+- **🛹 Skateboard**: Basic Upload & Browse (Issues #76, #80, #81, #82, #154, #155) - **READY TO START**
+- **🛴 Scooter**: Keyword Search (Issues #156, #157, #158) - **BLOCKED BY 🛹**
+- **🚲 Bicycle**: Speaker Attribution - **BLOCKED BY 🛴**
+- **🏍️ Motorcycle**: Semantic Search - **BLOCKED BY 🚲**
+- **🚗 Car**: Advanced Analytics - **BLOCKED BY 🏍️**
 
-### Phase 3: Analysis (P2) - Blocked by P1  
-3 issues for RAG pipeline and LLM integration
+### Recently Completed Infrastructure  
+- ✅ **Supabase Storage Migration** (Issue #129/#130) - Complete replacement of Vercel Blob
+- ✅ **Structured Logging System** (Issue #141) - Adze-based logging with correlation IDs
+- ✅ **Date Standardization** (Issues #111-#113) - dateUtils library with Luxon backing
+- ✅ **Roadmap Restructure** (2025-06-26) - MVP-focused milestone approach implemented
 
-**For complete roadmap**: See @claude/implementation-roadmap.md
+**For current milestone plan**: See @claude/milestone-restructure-v2.md  
+**For revised technical roadmap**: See @claude/implementation-roadmap-v2.md
 
 ## Key Constraints
 
@@ -269,11 +278,17 @@ This document provides essential information for productive development. For det
 ## Development Memories
 
 ### Core Development Principles
+- **MVP Milestone Approach**: Follow the 🛹🛴🚲🏍️🚗 progression. Each stage must deliver complete user value before proceeding to the next.
+- **YAGNI-First Planning**: For every proposed task, answer "What breaks if we skip this?" Vague answers move to backlog.
+- **Token-Constrained Development**: Size work for 5-hour development windows (1-2 development blocks per milestone).
 - **Minimal Solution Approach**: Always write the minimum possible code to satisfy a requirement. Think skateboard → scooter → bike → motorcycle → car. Avoid frame → engine → body → interior → car
 - **Date Handling**: Always use the new date lib when working with dates throughout the stack. Never use native Date functions or directly use the Luxon lib outside of our config interface
 - **Runtime Boundaries**: Keep browser-specific imports separate from Node.js-specific imports (see Runtime Boundary Rules above)
 
 ### Technical Implementation Memories
+- **Milestone-First Issue Creation**: Always tag new issues with appropriate scope emoji (🛹🛴🚲🏍️🚗)
+- **Infrastructure Deferral**: Tag non-critical infrastructure work as `status:deferred` + `scope:yagni?` for later review
+- **Critical Path Focus**: Prioritize issues marked `status:ready` in current milestone before creating new work
 - **Supabase CLI**: Use `npx supabase...` not `supabase...`
 - **TypeScript Types**: Prefer `as const` for types with finite known permutations
 - **GitHub Issues**: Use status labels (status:blocked, status:review, status:in-progress, status:ready) and organize related issues into epics with the epic label
