@@ -49,6 +49,14 @@ claude/
 - **AI/ML**: OpenAI embeddings + vector search + RAG pipeline
 - **API**: RESTful endpoints + WebSocket for real-time updates
 
+### Runtime Boundary Rules (Critical)
+- **NEVER mix server and client runtime code in the same file**
+- **Keep browser-specific imports separate from Node.js-specific imports**  
+- **Use environment-specific factory patterns**: `factories/server.ts`, `factories/client.ts`, `factories/test.ts`
+- **API Routes (`app/api/`)**: Only import server-side libraries and factories
+- **Client Components**: Only import client-side libraries and factories
+- **Shared Code**: Keep in separate files with no runtime dependencies (types only)
+
 ## Development Guidelines
 
 ### Development Methodology
@@ -59,7 +67,12 @@ claude/
 **For TDD guidelines**: See @claude/rules/test-driven-development.md
 
 ### Development Workflow
+- **Commit batching** and **branch management** for optimal development velocity
+- **Parallel development planning** to identify concurrent work opportunities
+- **Phase-based implementation** for complex issues with clear milestones
 - I keep the dev server running in a separate tab for efficiency.
+
+**For workflow optimization guidelines**: See @claude/rules/development-workflow-strategy.md
 
 ### Testing Strategy
 - **Property-based testing** with Fast-Check for edge cases
@@ -200,3 +213,11 @@ This document provides essential information for productive development. For det
 
 ### Development Principles
 - Always use the new date lib when working with dates throughout the stack. Never use native date functions or directly use the Luxon lib outside of our config interface. If new date-related needs arise, edit or add to the config date lib
+
+## Supabase Execution Memories
+
+- Remember you need to use `npx supabase...` not `supabase...`
+
+## Development Precautions
+
+- We need to remember to be careful about keeping browser runtime code out of server code and vice versa in this repo

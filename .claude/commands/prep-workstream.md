@@ -44,9 +44,17 @@ mkdir -p claude/todos
 - Assess impact on existing functionality
 - Note testing and deployment considerations
 
-### 5. **Branch Strategy**
+### 5. **Workflow Strategy Planning**
+Apply development-workflow-strategy.md guidelines:
+- **Dependency Analysis:** What must complete first vs parallel opportunities?
+- **Branch Strategy:** Single vs multiple branches based on complexity/coordination?
+- **Commit Planning:** Logical batching points (phase completion, feature units)
+- **Parallel Development:** Identify concurrent work streams and coordination needs
+
+### 6. **Branch Strategy**
 - Generate appropriate branch name following conventions
 - Consider issue type, scope, and naming patterns
+- Determine if multiple branches needed for coordination
 - Ensure branch name is descriptive and follows team standards
 
 ## Required Output Structure

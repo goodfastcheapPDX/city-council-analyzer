@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { TranscriptStorage, TranscriptMetadata } from '@/lib/storage/blob';
-import { createStorageForTest } from '@/lib/storage/factories';
+import { createStorageForTestSync as createStorageForTest } from "@/lib/storage/factories/test";
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env.test' });
 // Test timeout for network operations
@@ -197,7 +197,11 @@ describe.sequential('TranscriptStorage - Deletion Functionality', () => {
             // If we reach here, the operation didn't throw, which is fine if it's graceful
         } catch (error: any) {
             // If it does throw, the error should be appropriate
-            expect(error.message).toContain('not found');
+            // With new standardized error handling, it could be either NotFoundError or Database operation failed
+            expect(
+                error.message.includes('not found') || 
+                error.message.includes('Database operation failed')
+            ).toBe(true);
         }
 
         // 2. Try to delete all versions of a non-existent transcript

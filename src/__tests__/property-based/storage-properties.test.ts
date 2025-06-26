@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 import * as fc from 'fast-check';
 import { TranscriptStorage, TranscriptMetadata } from '@/lib/storage/blob';
-import { createStorageForTest } from '@/lib/storage/factories';
+import { createStorageForTestSync as createStorageForTest } from "@/lib/storage/factories/test";
 import { dateUtils } from '@/lib/config';
 import dotenv from 'dotenv';
 
