@@ -17,8 +17,8 @@ git checkout main && git pull origin main && git checkout -b test/114-date-stand
 **🚀 CURRENT STATUS: ACTIVE (2025-06-26)**
 - **BLOCKER RESOLVED:** Supabase Storage migration (Issues #129/#130) has replaced Vercel Blob dependency
 - **COMPLETED:** Phase 1 fully complete (test utilities foundation)
-- **PROGRESS:** Phase 2 - listing.test.ts, retrieval.test.ts, and upload.test.ts COMPLETED (3/6 storage test files updated)
-- **CURRENT:** Ready to continue with version.test.ts (next task in Phase 2) - requires Supabase Storage
+- **PROGRESS:** Phase 2 - listing.test.ts, retrieval.test.ts, upload.test.ts, and version.test.ts COMPLETED (4/6 storage test files updated)
+- **CURRENT:** Ready to continue with deletion.test.ts (next task in Phase 2) - requires Supabase Storage
 
 ### Requirements Summary
 Eliminate all direct Date object usage in test files (11+ files identified) and implement deterministic, standardized date testing using enhanced dateUtils with Luxon backing. This ensures reproducible test execution across environments while maintaining existing test coverage and property-based testing capabilities.
@@ -94,11 +94,12 @@ Eliminate all direct Date object usage in test files (11+ files identified) and 
   - **IMPLEMENTATION:** Replaced Date.now() with deterministic sourceIds using generateTranscriptData(), used testDates.deterministic() for consistent test dates, documented storage layer date format behavior
   - **RESULT:** All 2 tests passing consistently with deterministic date handling, upload operations preserve user input format
 
-- [⏸️] **Version Tests Date Updates** - src/__tests__/lib/storage/version.test.ts (PAUSED)
+- [x] **Version Tests Date Updates** - src/__tests__/lib/storage/version.test.ts (COMPLETED 2025-06-26)
   - **Details:** Standardize version history timestamps for reproducible tests
-  - **Dependencies:** Upload tests complete
+  - **Dependencies:** Upload tests complete ✅
   - **Definition of Done:** Version tracking uses consistent date format
-  - **STATUS:** Not started - waiting for Vercel Blob resolution
+  - **IMPLEMENTATION:** Replaced Date.now() with deterministic sourceIds using generateTranscriptData(), used testDates.deterministic() for consistent test dates, replaced new Date() with DateTime.fromISO() for date parsing
+  - **RESULT:** All 6 tests passing consistently with deterministic date handling, version management uses reproducible test data
 
 - [⏸️] **Deletion Tests Date Updates** - src/__tests__/lib/storage/deletion.test.ts (PAUSED)
   - **Details:** Replace direct Date usage in deletion logic tests
