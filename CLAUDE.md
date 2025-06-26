@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Next.js application called "transcript-analysis-system" that manages city council transcript uploads, storage, and analysis. The system uses Vercel Blob Storage for file storage and Supabase for metadata persistence.
+This is a Next.js application called "transcript-analysis-system" that manages city council transcript uploads, storage, and analysis. The system uses Supabase Storage for file storage and Supabase for metadata persistence and vector embeddings.
 
 **For detailed architecture**: See @claude/architecture-plan.md
 
@@ -44,10 +44,11 @@ claude/
 ```
 
 ### Core Architecture
-- **Storage**: Vercel Blob (files) + Supabase (metadata + vectors)
+- **Storage**: Supabase Storage (files) + Supabase (metadata + vectors)
 - **Processing**: Multi-stage pipeline with job queue
 - **AI/ML**: OpenAI embeddings + vector search + RAG pipeline
 - **API**: RESTful endpoints + WebSocket for real-time updates
+- **Logging**: Structured logging with Adze for observability and debugging
 
 ### Runtime Boundary Rules (Critical)
 - **NEVER mix server and client runtime code in the same file**
@@ -113,9 +114,9 @@ claude/
 ### Required Environment Variables
 ```bash
 # Storage
-BLOB_READ_WRITE_TOKEN=your_vercel_blob_token
 SUPABASE_URL=your_supabase_url
-SUPABASE_KEY=your_supabase_service_key
+SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_key
 
 # AI Services (for embeddings and analysis)
 OPENAI_API_KEY=your_openai_key
@@ -127,8 +128,9 @@ GITHUB_TOKEN=your_github_token
 ### Project Configuration
 Key settings in @src/lib/config.ts:
 - **Token limits**: 4000 max per segment, 200 overlap
-- **Storage**: 30-day expiration, 10MB max file size
+- **Storage**: 50MB max file size via Supabase Storage
 - **Processing**: Configurable quality levels and strategies
+- **Logging**: Environment-aware structured logging with Adze (correlation IDs, performance timing)
 
 ## Claude Rules System
 
@@ -157,13 +159,17 @@ This repository includes automated guidance in the @claude directory:
 
 ## Implementation Status
 
-### Phase 1: Foundation (P0) - Ready for Development
-6 issues immediately implementable:
-- Database schema and API middleware
-- Blob storage and validation systems  
-- Multi-format parsers and token counting
+### Recently Completed Infrastructure
+- ✅ **Supabase Storage Migration** (Issue #129/#130) - Complete replacement of Vercel Blob with Supabase Storage
+- ✅ **Structured Logging System** (Issue #141) - Adze-based logging with correlation IDs and performance timing
+- ✅ **Date Standardization** (Issues #111-#113) - dateUtils library with Luxon backing, UTC enforcement
 
-### Phase 2: Intelligence (P1) - Blocked by P0
+### Phase 1: Foundation (P0) - Core Infrastructure Complete
+✅ Database schema and API middleware
+✅ Supabase storage and validation systems  
+✅ Multi-format parsers and token counting
+
+### Phase 2: Intelligence (P1) - Ready for Development  
 6 issues for vector embeddings and search
 
 ### Phase 3: Analysis (P2) - Blocked by P1  
@@ -209,22 +215,16 @@ This document provides essential information for productive development. For det
 
 - We should create txt files using the naming convention {github-issue-#}-short-description.txt in the claude/todos directory to track our work. We should update this file to reflect our progress as we go.
 
-## Memories
+## Development Memories
 
-### Development Principles
-- Always use the new date lib when working with dates throughout the stack. Never use native date functions or directly use the Luxon lib outside of our config interface. If new date-related needs arise, edit or add to the config date lib
+### Core Development Principles
+- **Minimal Solution Approach**: Always write the minimum possible code to satisfy a requirement. Think skateboard → scooter → bike → motorcycle → car. Avoid frame → engine → body → interior → car
+- **Date Handling**: Always use the new date lib when working with dates throughout the stack. Never use native Date functions or directly use the Luxon lib outside of our config interface
+- **Runtime Boundaries**: Keep browser-specific imports separate from Node.js-specific imports (see Runtime Boundary Rules above)
 
-## Supabase Execution Memories
+### Technical Implementation Memories
+- **Supabase CLI**: Use `npx supabase...` not `supabase...`
+- **TypeScript Types**: Prefer `as const` for types with finite known permutations
+- **GitHub Issues**: Use status labels (status:blocked, status:review, status:in-progress, status:ready) and organize related issues into epics with the epic label
 
-- Remember you need to use `npx supabase...` not `supabase...`
-
-## Development Precautions
-
-- We need to remember to be careful about keeping browser runtime code out of server code and vice versa in this repo
-
-### TypeScript Type Memories
-- When creating typescript types and interfaces, always prefer `as const` for types with finite known permutations
-
-### GitHub Issue Management Memories
-- Use the github api to update issues with status labels while you work. these include status:blocked, status:review, status:in-progress, status:ready
-- When creating github issues, try to organize them into epics if more than 3 issues are meaningfully related. do this by using the epic label for the parent issue, and referencing the epic in the child issues. there's no convenient way to literally relate issues as sub-issues using the gh tool, so don't bother. it's enough to reference them
+**For detailed development guidance**: See @claude/rules/development-memories.md
