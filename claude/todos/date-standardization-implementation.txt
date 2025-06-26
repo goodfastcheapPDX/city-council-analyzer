@@ -186,8 +186,6 @@ expect(metadata.date).toBe('2023-04-15T00:00:00.000Z');
 - Enhance Zod validation schemas to use `dateUtils.isValidUserInput()`
 - Ensure API response date formatting consistency
 - Add comprehensive TDD tests for API date handling
-
-**❌ NOT IN SCOPE (Reserved for Future Issues)**:
 - **Issue #114**: Test files in `src/__tests__/` (12+ files with Date usage)
 - **Issue #116**: ESLint rules & TypeScript enforcement
 - Frontend components, database migrations, external API integrations

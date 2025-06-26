@@ -14,11 +14,11 @@ git checkout main && git pull origin main && git checkout -b test/114-date-stand
 **Assignee:** goodfastcheapPDX
 **Issue URL:** https://github.com/goodfastcheapPDX/city-council-analyzer/issues/114
 
-**⏸️ CURRENT STATUS: PAUSED (2025-06-25)**
-- **BLOCKER:** Vercel Blob operations limit exhausted - all storage tests fail with "store has been suspended"
+**🚀 CURRENT STATUS: ACTIVE (2025-06-26)**
+- **BLOCKER RESOLVED:** Supabase Storage migration (Issues #129/#130) has replaced Vercel Blob dependency
 - **COMPLETED:** Phase 1 fully complete (test utilities foundation)
-- **WIP:** Phase 2 listing.test.ts partially implemented (imports added, test data structure updated)
-- **NEXT:** Resume work after migrating away from Vercel Blob to alternative storage solution
+- **PROGRESS:** Phase 2 - listing.test.ts COMPLETED (1/6 storage test files updated)
+- **CURRENT:** Ready to continue with retrieval.test.ts (next task in Phase 2)
 
 ### Requirements Summary
 Eliminate all direct Date object usage in test files (11+ files identified) and implement deterministic, standardized date testing using enhanced dateUtils with Luxon backing. This ensures reproducible test execution across environments while maintaining existing test coverage and property-based testing capabilities.
@@ -73,19 +73,18 @@ Eliminate all direct Date object usage in test files (11+ files identified) and 
   - **Implementation:** Created comprehensive test data generator with deterministic faker seed, dateUtils integration, and extensive test coverage (12 tests passing)
 
 ### Phase 2: Storage Test Standardization (Estimated: 8-10 hours) - **PAUSED: VERCEL BLOB OPERATIONS LIMIT**
-- [⏸️] **Listing Tests Date Updates** - src/__tests__/lib/storage/listing.test.ts (WIP - PAUSED 2025-06-25)
-  - **Details:** Replace Date.now() with deterministic timestamps, use dateUtils.fromUserInput()
+- [x] **Listing Tests Date Updates** - src/__tests__/lib/storage/listing.test.ts (COMPLETED 2025-06-26)
+  - **Details:** Replace Date.now() with deterministic timestamps, use dateUtils functions
   - **Dependencies:** Test utilities foundation complete
   - **Definition of Done:** All date operations use dateUtils, tests pass consistently
-  - **BLOCKER:** Vercel Blob operations exhausted until next month - all storage tests failing
-  - **STATUS:** Partial implementation completed (imports added, test data generator integrated)
-  - **NEXT:** Resume after migration to alternative storage solution
+  - **IMPLEMENTATION:** Replaced Date.now() with deterministic sourceIds, used generateTranscriptData(), replaced new Date() with dateUtils.now(), updated date comparisons to use dateUtils.userInputToDatabase() and dateUtils.isBefore/isAfter()
+  - **RESULT:** All 11 tests passing consistently with deterministic date handling, reproducible across environments
 
-- [⏸️] **Retrieval Tests Date Updates** - src/__tests__/lib/storage/retrieval.test.ts (PAUSED)
+- [ ] **Retrieval Tests Date Updates** - src/__tests__/lib/storage/retrieval.test.ts (READY)
   - **Details:** Standardize date assertions and test data creation
-  - **Dependencies:** Listing tests complete
+  - **Dependencies:** Listing tests complete ✅
   - **Definition of Done:** Date filtering and queries use standardized format
-  - **STATUS:** Not started - waiting for Vercel Blob resolution
+  - **STATUS:** Ready to start - Supabase Storage migration enables testing
 
 - [⏸️] **Upload Tests Date Updates** - src/__tests__/lib/storage/upload.test.ts (PAUSED)
   - **Details:** Use deterministic upload timestamps, validate date format consistency
