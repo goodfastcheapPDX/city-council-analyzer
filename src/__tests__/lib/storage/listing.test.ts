@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { TranscriptStorage, TranscriptMetadata } from '@/lib/storage/blob';
 import { createStorageForTestSync as createStorageForTest } from "@/lib/storage/factories/test";
+import { dateUtils } from '@/lib/config';
+import { generateTranscriptData } from '@/__tests__/utils/test-data-generator';
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env.test' });
 
@@ -21,48 +23,48 @@ describe.sequential('TranscriptStorage - Listing and Search Functionality', () =
     // This suite sets up shared test data that should persist across tests
     (globalThis as any).__skipGlobalCleanup = true;
 
-    // Test data - create multiple transcripts with various properties
+    // Test data - create multiple transcripts with deterministic properties using dateUtils
     const testTranscripts = [
-        {
-            sourceId: `list-test-a-${Date.now()}`,
+        generateTranscriptData({
+            sourceId: "list-test-a-deterministic",
             title: "Marketing Team Meeting",
-            date: "2023-01-15",
+            date: dateUtils.databaseToUserInput(dateUtils.testDate('2023-01-15T10:30:00.000Z')),
             speakers: ["Alice", "Bob", "Charlie"],
             tags: ["marketing", "planning", "q1"],
             content: `{"meeting":"Marketing Q1 Planning"}`
-        },
-        {
-            sourceId: `list-test-b-${Date.now()}`,
+        }),
+        generateTranscriptData({
+            sourceId: "list-test-b-deterministic",
             title: "Engineering Team Standup",
-            date: "2023-02-10",
+            date: dateUtils.databaseToUserInput(dateUtils.testDate('2023-02-10T14:00:00.000Z')),
             speakers: ["Dave", "Eve", "Frank"],
             tags: ["engineering", "standup", "sprint"],
             content: `{"meeting":"Engineering Daily Standup"}`
-        },
-        {
-            sourceId: `list-test-c-${Date.now()}`,
+        }),
+        generateTranscriptData({
+            sourceId: "list-test-c-deterministic",
             title: "Executive Board Meeting",
-            date: "2023-03-05",
+            date: dateUtils.databaseToUserInput(dateUtils.testDate('2023-03-05T09:00:00.000Z')),
             speakers: ["Grace", "Heidi", "Ivan"],
             tags: ["executive", "board", "quarterly"],
             content: `{"meeting":"Q1 Executive Review"}`
-        },
-        {
-            sourceId: `list-test-d-${Date.now()}`,
+        }),
+        generateTranscriptData({
+            sourceId: "list-test-d-deterministic",
             title: "Marketing Campaign Review",
-            date: "2023-04-20",
+            date: dateUtils.databaseToUserInput(dateUtils.testDate('2023-04-20T16:30:00.000Z')),
             speakers: ["Alice", "Jack", "Karen"],
             tags: ["marketing", "campaign", "review"],
             content: `{"meeting":"Spring Campaign Review"}`
-        },
-        {
-            sourceId: `list-test-e-${Date.now()}`,
+        }),
+        generateTranscriptData({
+            sourceId: "list-test-e-deterministic",
             title: "Engineering Architecture Discussion",
-            date: "2023-05-12",
+            date: dateUtils.databaseToUserInput(dateUtils.testDate('2023-05-12T11:00:00.000Z')),
             speakers: ["Dave", "Liam", "Mia"],
             tags: ["engineering", "architecture", "planning"],
             content: `{"meeting":"System Architecture Review"}`
-        }
+        })
     ];
 
     // Set up before tests
@@ -77,7 +79,7 @@ describe.sequential('TranscriptStorage - Listing and Search Functionality', () =
         // Clean up any existing test data first
         for (const transcript of testTranscripts) {
             try {
-                await storage.deleteAllVersions(transcript.sourceId);
+                await storage.deleteAllVersions(transcript.metadata.sourceId);
             } catch (error) {
                 // Ignore cleanup errors - records may not exist
             }
@@ -109,14 +111,9 @@ describe.sequential('TranscriptStorage - Listing and Search Functionality', () =
         // Upload all test transcripts
         for (const transcript of testTranscripts) {
             const metadata: Omit<TranscriptMetadata, 'uploadedAt' | 'version'> = {
-                sourceId: transcript.sourceId,
-                title: transcript.title,
-                date: transcript.date,
-                speakers: transcript.speakers,
-                format: "json",
+                ...transcript.metadata,
                 processingStatus: "processed",
-                processingCompletedAt: new Date().toISOString(),
-                tags: transcript.tags
+                processingCompletedAt: dateUtils.now()
             };
 
             await storage.uploadTranscript(transcript.content, metadata);
@@ -124,22 +121,18 @@ describe.sequential('TranscriptStorage - Listing and Search Functionality', () =
             // For the first two transcripts, also upload a second version
             if (transcript === testTranscripts[0] || transcript === testTranscripts[1]) {
                 await storage.uploadTranscript(
-                    `{"meeting":"Updated version of ${transcript.title}"}`,
+                    `{"meeting":"Updated version of ${transcript.metadata.title}"}`,
                     {
-                        sourceId: transcript.sourceId,
-                        title: `${transcript.title} - Updated`,
-                        date: transcript.date,
-                        speakers: transcript.speakers,
-                        format: "json",
+                        ...transcript.metadata,
+                        title: `${transcript.metadata.title} - Updated`,
                         processingStatus: "processed",
-                        processingCompletedAt: new Date().toISOString(),
-                        tags: transcript.tags
+                        processingCompletedAt: dateUtils.now()
                     }
                 );
             }
 
             // Track sourceId for cleanup
-            testSourceIds.push(transcript.sourceId);
+            testSourceIds.push(transcript.metadata.sourceId);
         }
 
         // Give some time for any eventual consistency in the database
@@ -195,8 +188,8 @@ describe.sequential('TranscriptStorage - Listing and Search Functionality', () =
         const allTranscripts = await storage.listTranscripts(20, 0);
 
         // 2. Find our test transcripts that have multiple versions
-        const firstTestId = testTranscripts[0].sourceId;
-        const secondTestId = testTranscripts[1].sourceId;
+        const firstTestId = testTranscripts[0].metadata.sourceId;
+        const secondTestId = testTranscripts[1].metadata.sourceId;
 
         // 3. Count how many times each sourceId appears
         const sourceIdCounts = allTranscripts.items.reduce((counts, transcript) => {
@@ -320,9 +313,13 @@ describe.sequential('TranscriptStorage - Listing and Search Functionality', () =
 
         // Verify all returned transcripts are within the date range
         for (const item of midRangeResults.items) {
-            const date = new Date(item.metadata.date);
-            expect(date >= new Date('2023-02-01')).toBe(true);
-            expect(date <= new Date('2023-04-30')).toBe(true);
+            const itemDate = dateUtils.userInputToDatabase(item.metadata.date);
+            const fromDate = dateUtils.userInputToDatabase('2023-02-01');
+            const toDate = dateUtils.userInputToDatabase('2023-04-30');
+            // Item date should be >= fromDate (not before fromDate)
+            expect(dateUtils.isBefore(itemDate, fromDate)).toBe(false);
+            // Item date should be <= toDate (not after toDate) 
+            expect(dateUtils.isAfter(itemDate, toDate)).toBe(false);
         }
 
         // 3. Filter transcripts by an earlier date range
@@ -355,7 +352,7 @@ describe.sequential('TranscriptStorage - Listing and Search Functionality', () =
 
     it('should filter transcripts by processing status correctly', async () => {
         // 1. Get one of our test transcripts and update its status to 'pending'
-        const targetSourceId = testTranscripts[4].sourceId;
+        const targetSourceId = testTranscripts[4].metadata.sourceId;
         await storage.updateProcessingStatus(targetSourceId, 1, 'pending');
 
         // 2. Search for 'pending' transcripts
@@ -401,9 +398,13 @@ describe.sequential('TranscriptStorage - Listing and Search Functionality', () =
             expect(item.metadata.title.toLowerCase()).toContain('marketing');
             expect(item.metadata.speakers).toContain('Alice');
 
-            const date = new Date(item.metadata.date);
-            expect(date >= new Date('2023-01-01')).toBe(true);
-            expect(date <= new Date('2023-12-31')).toBe(true);
+            const itemDate = dateUtils.userInputToDatabase(item.metadata.date);
+            const startDate = dateUtils.userInputToDatabase('2023-01-01');
+            const endDate = dateUtils.userInputToDatabase('2023-12-31');
+            // Item date should be >= startDate (not before startDate)
+            expect(dateUtils.isBefore(itemDate, startDate)).toBe(false);
+            // Item date should be <= endDate (not after endDate)
+            expect(dateUtils.isAfter(itemDate, endDate)).toBe(false);
         }
 
         // 3. Search with contradictory criteria
