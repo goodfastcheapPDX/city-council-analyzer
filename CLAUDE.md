@@ -89,6 +89,21 @@ claude/
 ### Testing Best Practices
 - When writing unit tests, always reference the actual input data in the assertion instead of recreating logic or patterns emulating the input data. For example, `expect(actual.id).toMatch(input.id)`, not `expect(actual.id).toMatch(/some-regex-that-looks-like-input-id/)`
 
+### Date Handling Standards
+- **NEVER use native Date operations** - All date handling must use `dateUtils` from `@/lib/config`
+- **Use branded types** for compile-time safety (`DatabaseDateString`, `UserInputDateString`, `DisplayDateString`)
+- **ESLint enforcement** prevents `new Date()`, `Date.now()`, and direct date library imports
+- **Runtime validation** with type guards for external data (`dateTypeGuards.assertDatabaseDateString()`)
+- **Deterministic testing** with `dateUtils.testDate()` for reliable test results
+
+**Key APIs:**
+- `dateUtils.now()` - Current timestamp (never `new Date()` or `Date.now()`)
+- `dateUtils.userInputToDatabase()` - Convert form inputs to storage format
+- `typedDateUtils.now()` - Type-safe current timestamp returning `DatabaseDateString`
+- `typedDateUtils.validateUserInput()` - Validate and cast user input dates
+
+**For complete date handling guide**: See @docs/date-handling-guide.md
+
 ### Issue Management
 - **Detailed specifications** required for all GitHub issues
 - **Clear dependencies** and acceptance criteria
@@ -212,7 +227,9 @@ This document provides essential information for productive development. For det
 ## Memories
 
 ### Development Principles
-- Always use the new date lib when working with dates throughout the stack. Never use native date functions or directly use the Luxon lib outside of our config interface. If new date-related needs arise, edit or add to the config date lib
+- **Date Handling Enforcement**: Always use `dateUtils` and `typedDateUtils` from `@/lib/config`. NEVER use `new Date()`, `Date.now()`, or direct Luxon imports. ESLint rules enforce this with helpful error messages pointing to correct alternatives.
+- **Type Safety**: Use branded date types (`DatabaseDateString`, `UserInputDateString`, `DisplayDateString`) for compile-time safety and runtime validation.
+- **Testing**: Use `dateUtils.testDate()` for deterministic test dates. All storage tests use standardized date utilities for consistency.
 
 ## Supabase Execution Memories
 
