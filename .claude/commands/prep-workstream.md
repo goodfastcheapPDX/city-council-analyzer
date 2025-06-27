@@ -6,7 +6,7 @@
 > **STOP**. Ask the user which tasks to drop or defer before proceeding.
 
 ## Command Usage
-`/prep-workstream <issue_number>`
+`/prep-workstream $ARGUMENTS`
 
 Example: `/prep-workstream #114` or `/prep-workstream 114`
 
@@ -16,7 +16,7 @@ Example: `/prep-workstream #114` or `/prep-workstream 114`
 ## Primary Commands
 ```bash
 # Extract issue number from parameter (remove # if present)
-ISSUE_NUM=$(echo "$1" | sed 's/#//')
+ISSUE_NUM=$ARGUMENTS
 
 # Fetch issue details
 gh issue view $ISSUE_NUM --json title,body,labels,assignees,milestone,comments

@@ -186,7 +186,7 @@ The following 18 issues have been tagged as premature optimization:
 ### Documentation Updates
 - **This document**: Replaces `claude/implementation-roadmap.md` as primary reference
 - **Milestone tracking**: GitHub Projects configured with new milestone structure
-- **LAST_TIME_NEXT_TIME.md**: Updated to reflect new priorities and approach
+- **work-journal.md**: Updated to reflect new priorities and approach
 
 ## Conclusion
 

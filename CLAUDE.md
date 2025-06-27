@@ -176,9 +176,9 @@ claude/
 - **Run typecheck before commits**: Always run `npm run typecheck` before committing
 - **Claude Code attribution** footer required
 - **No commits without explicit user request**
-- **When making a commit reflecting task completion, update the LAST_TIME_NEXT_TIME.md file to record that**
+- **When making a commit reflecting task completion, update the work-journal.md file to record that**
 - **You only need to run typecheck before the commit, not after**
-- **Write to LAST_TIME_NEXT_TIME.md before making commits**
+- **Write to work-journal.md before making commits**
 
 **For commit guidelines**: See @claude/rules/git-commit-style.md
 
@@ -279,7 +279,7 @@ The project has undergone a comprehensive milestone restructure based on critiqu
 ## Session Coordination
 
 ### Development Session Tracking
-- **@LAST_TIME_NEXT_TIME.md**: Session coordination file that maintains continuity across development sessions:
+- **work-journal.md**: Session coordination file that maintains continuity across development sessions:
   - **"Last Time" section**: Documents what was accomplished in the previous session
   - **"Current Status"**: Tracks project state with clear ✅/❌ indicators
   - **"Next Time" tasks**: Lists specific actionable priorities for the upcoming session
@@ -293,6 +293,7 @@ This document provides essential information for productive development. For det
 ## Development Memories
 
 ### Core Development Principles
+- **MVP Scope Management**: ALWAYS apply @claude/rules/mvp.md when planning or implementing features. Ask "What breaks if we skip this?" for every task.
 - **MVP Milestone Approach**: Follow the 🛹🛴🚲🏍️🚗 progression. Each stage must deliver complete user value before proceeding to the next.
 - **YAGNI-First Planning**: For every proposed task, answer "What breaks if we skip this?" Vague answers move to backlog.
 - **Token-Constrained Development**: Size work for 5-hour development windows (1-2 development blocks per milestone).

@@ -6,14 +6,14 @@
 > **STOP**. Ask the user which tasks to drop or defer before proceeding.
 
 ## Command Usage
-`/pickup <issue_number>`
+`/pickup $ARGUMENTS`
 
 Example: `/pickup #114` or `/pickup 114`
 
 ## Initial Setup
 ```bash
 # Extract issue number from parameter (remove # if present)
-ISSUE_NUM=$(echo "$1" | sed 's/#//')
+ISSUE_NUM=$ARUMGENTS
 
 # Find the workstream plan file
 PLAN_FILE="claude/todos/workstream_plan_${ISSUE_NUM}.md"

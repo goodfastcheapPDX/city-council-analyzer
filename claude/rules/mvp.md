@@ -5,6 +5,32 @@
 - **Implementation**: Build the narrowest possible solution to the specific problem statement
 - **Iteration**: Add complexity only when requirements explicitly demand it
 
+## Time Boxing by Milestone
+
+Each milestone has effort constraints to prevent over-engineering:
+- **🛹 Skateboard**: 6-8 hours maximum (single development block)
+- **🛴 Scooter**: 8-12 hours maximum 
+- **🚲 Bicycle**: 12-16 hours maximum
+- **🏍️ Motorcycle**: 16-24 hours maximum
+- **🚗 Car**: 24+ hours acceptable
+
+**If your estimate exceeds the milestone time box** → Scope is too large, apply minimal solution approach.
+
+## Workstream Planning Applications
+
+When planning GitHub issues or breaking down features:
+
+**✅ Apply the "What breaks?" test to each task:**
+- If answer is vague or speculative → Move to deferred/backlog
+- If answer is "nothing user-visible" → Move to deferred/backlog  
+- If answer is "user can't complete core workflow" → Keep in MVP scope
+
+**✅ Watch for scope creep warning signs:**
+- Words like "comprehensive", "enterprise-grade", "future-proof"
+- >5 acceptance criteria for a 🛹 milestone
+- Multiple "Manager" or "Service" classes being created
+- Any mention of "monitoring" or "dashboards" in 🛹 scope
+
 ## ✅ Good examples — “Always do this”
 ###	Situation	Minimal-first move	Why it’s a “skateboard”
 1. Need to read/write transcripts in tests	Add one thin factory (createStorageForTest) that wraps the Supabase SDK and hard-codes a single path prefix for isolation. No elaborate DI, no plugin system. See real code in src/lib/storage/factories.ts. 

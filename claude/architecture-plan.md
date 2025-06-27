@@ -4,7 +4,7 @@
 
 Build an AI-powered transcript analysis system that transforms city council meeting recordings into searchable, analyzable knowledge. The system enables users to:
 
-1. **Upload** transcripts in multiple formats (JSON, SRT, VTT, text)
+1. **Upload** transcripts in multiple formats (JSON, text)
 2. **Process** content through intelligent segmentation and normalization
 3. **Analyze** content using vector embeddings and LLM-powered insights
 4. **Query** transcripts with semantic search and contextual retrieval
@@ -25,38 +25,38 @@ Query Interface → RAG Pipeline → LLM Analysis → User Results
 
 ### Core System Components
 
-#### **1. Ingestion Layer (P0 Foundation)**
+#### **1. Ingestion Layer**
 - **Format Detection**: Automatic format identification
 - **Multi-Format Parsers**: JSON, SRT, VTT, plain text support
 - **Content Normalization**: Speaker standardization, text cleaning
 - **Schema Validation**: Zod-based validation with clear error messages
 - **Upload API**: RESTful endpoints with progress tracking
 
-#### **2. Storage Layer (P0 Foundation)**
+#### **2. Storage Layer**
 - **Blob Storage**: Vercel Blob for transcript content (raw + processed)
 - **Metadata Database**: Supabase for structured data and relationships
 - **Versioning System**: Track transcript changes and processing history
 - **Caching Layer**: Redis-compatible caching for performance
 
-#### **3. Processing Layer (P1 Processing)**
+#### **3. Processing Layer**
 - **Segmentation Engine**: Speaker-based and semantic boundary detection
 - **Token Management**: OpenAI-compatible token counting and limits
 - **Quality Assessment**: Content validation and processing metrics
 - **Pipeline Orchestration**: Reliable, resumable processing workflows
 
-#### **4. AI/ML Layer (P1-P2 Processing)**
+#### **4. AI/ML Layer**
 - **Vector Embeddings**: OpenAI embeddings with batch processing
 - **Embedding Storage**: Vector database with similarity search
 - **Speaker Profiling**: Aggregated speaker characteristics and patterns
 - **Content Indexing**: Searchable indexes for rapid retrieval
 
-#### **5. Analysis Layer (P2 Analysis)**
+#### **5. Analysis Layer**
 - **RAG Engine**: Context retrieval and prompt assembly
 - **LLM Integration**: Provider-agnostic LLM service abstraction
 - **Topic Analysis**: Automated topic extraction and classification
 - **Trend Detection**: Temporal analysis and pattern recognition
 
-#### **6. Query Interface (P2-P3 Analysis)**
+#### **6. Query Interface**
 - **Semantic Search**: Vector similarity with metadata filtering
 - **Contextual Retrieval**: Multi-faceted search with relevance ranking
 - **Analysis Endpoints**: Structured queries for specific insights
@@ -64,107 +64,9 @@ Query Interface → RAG Pipeline → LLM Analysis → User Results
 
 ## Detailed Technical Architecture
 
-### Database Schema Design
-
-#### Core Tables (Supabase)
-```sql
--- Core transcript metadata
-CREATE TABLE transcripts (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  source_id VARCHAR(255) UNIQUE NOT NULL,
-  title VARCHAR(500) NOT NULL,
-  date DATE NOT NULL,
-  format transcript_format NOT NULL,
-  processing_status processing_status_enum DEFAULT 'pending',
-  uploaded_at TIMESTAMPTZ DEFAULT NOW(),
-  processed_at TIMESTAMPTZ,
-  blob_url TEXT NOT NULL,
-  blob_key VARCHAR(500) NOT NULL,
-  version_number INTEGER DEFAULT 1,
-  content_hash VARCHAR(64),
-  metadata JSONB DEFAULT '{}'::jsonb,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Transcript segments for search and analysis
-CREATE TABLE transcript_segments (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  transcript_id UUID REFERENCES transcripts(id) ON DELETE CASCADE,
-  segment_index INTEGER NOT NULL,
-  content TEXT NOT NULL,
-  speaker_name VARCHAR(255),
-  start_time_ms INTEGER,
-  end_time_ms INTEGER,
-  token_count INTEGER NOT NULL,
-  confidence_score DECIMAL(3,2) DEFAULT 1.0,
-  embedding vector(1536), -- OpenAI embedding dimension
-  metadata JSONB DEFAULT '{}'::jsonb,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(transcript_id, segment_index)
-);
-
--- Speaker tracking and profiling
-CREATE TABLE speakers (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name VARCHAR(255) UNIQUE NOT NULL,
-  normalized_name VARCHAR(255) NOT NULL,
-  role VARCHAR(100),
-  profile_embedding vector(1536),
-  topic_associations JSONB DEFAULT '{}'::jsonb,
-  speech_patterns JSONB DEFAULT '{}'::jsonb,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Processing jobs and status tracking
-CREATE TABLE processing_jobs (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  transcript_id UUID REFERENCES transcripts(id) ON DELETE CASCADE,
-  job_type processing_job_type NOT NULL,
-  status job_status_enum DEFAULT 'pending',
-  started_at TIMESTAMPTZ,
-  completed_at TIMESTAMPTZ,
-  error_message TEXT,
-  progress_data JSONB DEFAULT '{}'::jsonb,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Analysis results and caching
-CREATE TABLE analysis_cache (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  query_hash VARCHAR(64) UNIQUE NOT NULL,
-  query_type analysis_type NOT NULL,
-  results JSONB NOT NULL,
-  expires_at TIMESTAMPTZ NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-```
-
-#### Indexes for Performance
-```sql
--- Transcript queries
-CREATE INDEX idx_transcripts_date ON transcripts(date);
-CREATE INDEX idx_transcripts_processing_status ON transcripts(processing_status);
-CREATE INDEX idx_transcripts_source_id ON transcripts(source_id);
-
--- Segment search and retrieval
-CREATE INDEX idx_segments_transcript_id ON transcript_segments(transcript_id);
-CREATE INDEX idx_segments_speaker ON transcript_segments(speaker_name);
-CREATE INDEX idx_segments_embedding ON transcript_segments USING ivfflat (embedding vector_cosine_ops);
-
--- Speaker analysis
-CREATE INDEX idx_speakers_normalized_name ON speakers(normalized_name);
-CREATE INDEX idx_speakers_embedding ON speakers USING ivfflat (profile_embedding vector_cosine_ops);
-
--- Job monitoring
-CREATE INDEX idx_jobs_transcript_status ON processing_jobs(transcript_id, status);
-CREATE INDEX idx_jobs_type_status ON processing_jobs(job_type, status);
-```
-
 ### Storage Strategy
 
-#### Blob Storage Organization (Vercel Blob)
+#### Blob Storage Organization (Supabase Blob)
 ```
 transcripts/
 ├── raw/
@@ -187,59 +89,6 @@ transcripts/
     └── {export_id}/
         ├── {timestamp}_full_export.json
         └── {timestamp}_summary.json
-```
-
-#### Caching Strategy
-- **Redis/Memory**: API response caching, session data
-- **Database**: Analysis result caching with TTL
-- **CDN**: Static assets, processed transcript previews
-
-### API Design
-
-#### RESTful Endpoints
-```typescript
-// Transcript Management
-POST   /api/transcripts              // Upload new transcript
-GET    /api/transcripts              // List transcripts with pagination
-GET    /api/transcripts/{id}         // Get specific transcript
-PUT    /api/transcripts/{id}         // Update transcript metadata
-DELETE /api/transcripts/{id}         // Delete transcript
-GET    /api/transcripts/{id}/versions // Get version history
-
-// Processing Operations
-POST   /api/transcripts/{id}/process // Trigger processing pipeline
-GET    /api/transcripts/{id}/status  // Get processing status
-POST   /api/transcripts/{id}/reprocess // Reprocess with new options
-
-// Search and Retrieval
-GET    /api/search                   // Semantic search across transcripts
-POST   /api/search/advanced          // Complex queries with filters
-GET    /api/search/suggestions       // Search autocomplete
-
-// Analysis Operations
-POST   /api/analyze/topic            // Topic analysis for transcript(s)
-POST   /api/analyze/speaker          // Speaker pattern analysis
-POST   /api/analyze/trend            // Trend analysis across time
-POST   /api/analyze/compare          // Compare multiple transcripts
-
-// RAG and AI Operations
-POST   /api/chat                     // Conversational interface
-POST   /api/summarize               // Generate summaries
-POST   /api/extract                 // Extract specific information
-```
-
-#### WebSocket Events (Real-time Updates)
-```typescript
-// Processing updates
-'processing:started'   // Job started
-'processing:progress'  // Progress percentage
-'processing:completed' // Job finished
-'processing:error'     // Job failed
-
-// Analysis updates
-'analysis:started'     // Analysis job started
-'analysis:results'     // Partial results available
-'analysis:completed'   // Final results ready
 ```
 
 ### Processing Pipeline Architecture

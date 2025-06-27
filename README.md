@@ -4,7 +4,6 @@ Quick Links:
 - Local DB Dashboard: http://127.0.0.1:54323/project/default
 - Remote Prod DB Dashboard: https://supabase.com/dashboard/project/znybssicqofaendbrnbt/database/tables
 - Github Repo: https://github.com/goodfastcheapPDX/city-council-analyzer
-- Vercel Blob Storage: https://vercel.com/joes-projects-eef773d6/city-council-analyzer/stores/blob/store_2h8lKvybU9NE79DF/browser
 
 ---
 
@@ -47,13 +46,13 @@ Each stage is production-deployable, adds clear user value, and locks the underl
 
 ```bash
 # Clone & install
-git clone https://github.com/<org>/city-council-analyzer.git
+git clone https://github.com/city-council-analyzer.git
 cd city-council-analyzer
 pnpm install
 
 # Local dev
-pnpm supabase start   # launches local Postgres + storage
-pnpm dev              # starts Next.js app at http://localhost:3000
+npx supabase start   # launches local Postgres + storage
+npm run dev              # starts Next.js app at http://localhost:3000
 ```
 
 Configure environment variables in `.env.local` (see `.env.example`).

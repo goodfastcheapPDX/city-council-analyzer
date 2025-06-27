@@ -2,9 +2,9 @@ You are catching up on this project after time away. Follow these exact steps in
 
 
 1. **Read Project Context**: 
-   - Review the @CLAUDE.md file for project overview and current status
-   - Check the @claude/rules/ directory for development guidelines
-   - Read @LAST_TIME_NEXT_TIME.md for previous session progress and planned next tasks
+   - Review the CLAUDE.md file for project overview and current status
+   - Check the claude/rules/ directory for development guidelines
+   - Read work-journal.md for previous session progress and planned next tasks
 
 2. **Check Recent Git History**: Run `git log --oneline -10` to see recent commits and understand what was done recently
 

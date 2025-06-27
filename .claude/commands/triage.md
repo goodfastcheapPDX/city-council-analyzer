@@ -19,7 +19,7 @@ Mercilessly audit GitHub issues against the skateboard‑first roadmap. Anything
 
 ## Pre‑Flight Checklist
 1. **Read Core Rules**: `./claude/rules/mvp.md` (non‑negotiable).
-2. **Project Context**: Load `implementation-roadmap.md`, `architecture-plan.md`, any `docs/` planning files.
+2. **Project Context**: Load `roadmap.md`, `architecture-plan.md`, any relevant planning files, such as in `claude/todos/`.
 3. **Issue Set**:
    ```bash
    BASE=$(echo "$1" | sed 's/#//')

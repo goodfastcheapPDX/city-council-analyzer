@@ -139,7 +139,7 @@ Based on successful pattern from Issue #130:
 docs: complete Issue #129 workstream and cleanup outdated todos
 
 - Remove completed workstream plans (#115, #129)
-- Update LAST_TIME_NEXT_TIME.md with final status
+- Update work-journal.md with final status
 - Archive resolved documentation files
 
 # ❌ Avoid: Frequent small cleanup commits
