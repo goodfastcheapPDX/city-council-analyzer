@@ -1,29 +1,9 @@
-# Implementation Roadmap v2.0 - MVP-Focused Milestone Approach
+# Implementation Roadmap: MVP-Focused Milestone Approach
 
 ## Overview
-This document replaces the previous complex phase-based approach with a simplified MVP milestone structure focused on delivering user value incrementally. Based on critique and analysis of the current project state, this approach prioritizes immediate user needs over infrastructure complexity.
+This document describes an MVP milestone structure focused on delivering user value incrementally. This approach prioritizes immediate user needs over infrastructure complexity.
 
-## Current State Analysis
-
-### ✅ Completed Infrastructure
-- **Supabase Storage Migration**: Complete replacement of Vercel Blob with Supabase Storage
-- **Database Schema**: Basic transcript storage and metadata management
-- **API Foundation**: Working upload/list endpoints with real storage integration
-- **Testing Infrastructure**: Dependency injection pattern, realistic test environments
-
-### 🚫 Deferred Infrastructure (Tagged `scope:yagni?`)
-The following 18 issues have been tagged as premature optimization:
-- **Logging Infrastructure**: Issues #143-147 (5 issues)
-- **Database Isolation**: Issues #101-104 (4 issues)  
-- **Config Refactoring**: Issues #136-139 (4 issues)
-- **Property-Based Testing Optimization**: Issues #94-99 (6 issues)
-
-**Rationale**: These represent infrastructure complexity that doesn't deliver immediate user value for a single-user research tool.
-
-### ✅ Unblocked Critical Path
-- **Issue #82**: Basic CRUD API Endpoints - now `status:ready` (dependencies #76, #80, #81 are ready)
-
-## Revised Milestone Structure
+## Milestone Structure
 
 ### 🛹 Skateboard - Basic Upload & Browse
 **Goal**: Upload JSON/TXT files via web UI, see list of transcripts, view content  
@@ -144,12 +124,6 @@ The following 18 issues have been tagged as premature optimization:
 - **Issue Batching**: Group related changes into single commits
 - **Milestone Focus**: Complete each stage fully before proceeding
 
-#### Immediate Next Steps (Current Session)
-1. ✅ **Triage Complete**: Deferred 18 premature optimization issues
-2. ✅ **Critical Path Unblocked**: Issue #82 now `status:ready`
-3. ✅ **Placeholder Issues Created**: #154-158 for 🛹 and 🛴 milestones
-4. 🔄 **Ready to Start**: Issues #76, #80, #81, #82 for 🛹 implementation
-
 ## Success Metrics
 
 ### Quantified Exit Criteria
@@ -172,25 +146,11 @@ The following 18 issues have been tagged as premature optimization:
 
 ### Quality Gates
 - **Manual Validation**: Each milestone tested with real council transcript data
-- **Performance Benchmarks**: Automated performance testing for API response times
 - **User Acceptance**: Each stage must demonstrate clear improvement in research workflow
-
-## Migration from Legacy Roadmap
-
-### Issue Status Changes
-- **18 issues deferred**: Tagged `status:deferred` + `scope:yagni?`
-- **4 issues unblocked**: Critical path (#76, #80, #81, #82) now ready
-- **5 new issues created**: Foundation for 🛹 and 🛴 milestones
-- **40+ issues remain**: Most moved to 🏍️/🚗 for later evaluation
-
-### Documentation Updates
-- **This document**: Replaces `claude/implementation-roadmap.md` as primary reference
-- **Milestone tracking**: GitHub Projects configured with new milestone structure
-- **work-journal.md**: Updated to reflect new priorities and approach
 
 ## Conclusion
 
-This revised roadmap transforms a 48-issue, 12-week complex infrastructure project into a focused 5-milestone user-value delivery system. Each milestone represents a complete, usable improvement to the research workflow, with built-in validation points and escape hatches for technical decisions.
+Each milestone represents a complete, usable improvement to the research workflow, with built-in validation points and escape hatches for technical decisions.
 
 The approach respects the constraint of token-limited development sessions while ensuring each stage delivers measurable value to the primary user (single researcher doing city council advocacy work).
 
