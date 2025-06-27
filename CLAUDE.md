@@ -15,7 +15,7 @@ THE MOST IMPORTANT RULE IS @claude/rules/mvp.md. MVP is the golden rule!
 This is a Next.js application called "transcript-analysis-system" that manages city council transcript uploads, storage, and analysis. The system uses Supabase Storage for file storage and Supabase for metadata persistence and vector embeddings.
 
 **For detailed architecture**: See @claude/architecture-plan.md
-**For current milestone plan**: See @claude/milestone-restructure-v2.md
+**For current milestone plan**: See @claude/roadmap.md
 
 ## Quick Reference
 
@@ -32,9 +32,6 @@ npm run test:storage     # Run storage tests (sequential)
 npm run test:coverage    # Run with coverage report
 npm run test:api         # Run manual API endpoint tests
 npm run typecheck        # Type check all TypeScript files
-
-# Docker (for integration testing)
-npm run docker:up        # Start test containers
 ```
 
 ### Key File Locations
@@ -48,9 +45,7 @@ src/
 
 claude/
 ├── architecture-plan.md         # Complete system architecture  
-├── milestone-restructure-v2.md  # Current MVP milestone plan (ACTIVE)
-├── implementation-roadmap-v2.md # Revised roadmap with deferred issues
-├── implementation-roadmap.md    # Legacy 48-issue roadmap (DEPRECATED)
+├── roadmap.md                   # Current roadmap
 └── rules/                       # Project-specific automation rules
 ```
 
@@ -76,7 +71,7 @@ claude/
 - **Red-Green-Refactor** cycle for all new functionality
 - **Behavior specification** through tests, not implementation details
 
-**For TDD guidelines**: See @claude/rules/test-driven-development.md
+**For TDD guidelines**: See `claude/rules/test-driven-development.md`
 
 ### Development Workflow
 - **Commit batching** and **branch management** for optimal development velocity
@@ -84,7 +79,7 @@ claude/
 - **Phase-based implementation** for complex issues with clear milestones
 - I keep the dev server running in a separate tab for efficiency.
 
-**For workflow optimization guidelines**: See @claude/rules/development-workflow-strategy.md
+**For workflow optimization guidelines**: See `claude/rules/development-workflow-strategy.md`
 
 #### Available Github Issue Labels
 | Label                       | Description                                                                                                                                              |
@@ -139,11 +134,11 @@ claude/
 - **Sequential storage tests** (`--max-concurrency=1`)
 - **80% coverage** minimum for all components
 
-**For detailed testing guidance**: See @claude/rules/testing-strategy.md
+**For detailed testing guidance**: See `claude/rules/testing-strategy.md`
 
 ### Property-Based Testing Guidance
-- **Remember to reference the @claude/rules/property-based-testing-guide.md rule when planning tests and engaging in TDD**
-- **Remember to check the @claude/rules/visual-testing-guide.md when planning tests or engaging in TDD**
+- **Remember to reference the `claude/rules/property-based-testing-guide.md` rule when planning tests and engaging in TDD**
+- **Remember to check the `claude/rules/visual-testing-guide.md` when planning tests or engaging in TDD**
 
 ### Testing Best Practices
 - When writing unit tests, always reference the actual input data in the assertion instead of recreating logic or patterns emulating the input data. For example, `expect(actual.id).toMatch(input.id)`, not `expect(actual.id).toMatch(/some-regex-that-looks-like-input-id/)`
@@ -161,7 +156,7 @@ claude/
 - `typedDateUtils.now()` - Type-safe current timestamp returning `DatabaseDateString`
 - `typedDateUtils.validateUserInput()` - Validate and cast user input dates
 
-**For complete date handling guide**: See @docs/date-handling-guide.md
+**For complete date handling guide**: See `claude/rules/date-handling-guide.md`
 
 ### Issue Management
 - **Detailed specifications** required for all GitHub issues
@@ -169,7 +164,7 @@ claude/
 - **Property-based testing** requirements included
 - **Use labels when creating github issues. if labels that make sense don't exist yet in the project, create new labels**
 
-**For issue creation standards**: See @claude/rules/backlog-management.md
+**For issue creation standards**: See `claude/rules/backlog-management.md`
 
 ### Commit Standards
 - **Conventional commits** with detailed explanations
@@ -180,7 +175,7 @@ claude/
 - **You only need to run typecheck before the commit, not after**
 - **Write to work-journal.md before making commits**
 
-**For commit guidelines**: See @claude/rules/git-commit-style.md
+**For commit guidelines**: See `claude/rules/git-commit-style.md`
 
 ## Environment Configuration
 
@@ -207,7 +202,7 @@ Key settings in @src/lib/config.ts:
 
 ## Claude Rules System
 
-This repository includes automated guidance in the @claude directory:
+This repository includes automated guidance in the `claude/` directory:
 
 ### When Claude Should Check Rules
 - Starting work on GitHub issues
@@ -228,7 +223,7 @@ This repository includes automated guidance in the @claude directory:
 3. Apply step-by-step instructions
 4. Validate using rule-specific criteria
 
-**For rule management**: See @claude/rule-management.md
+**For rule management**: See `claude/rules/rule-management.md`
 
 ## Implementation Status
 
@@ -253,8 +248,7 @@ The project has undergone a comprehensive milestone restructure based on critiqu
 - ✅ **Date Standardization** (Issues #111-#113) - dateUtils library with Luxon backing
 - ✅ **Roadmap Restructure** (2025-06-26) - MVP-focused milestone approach implemented
 
-**For current milestone plan**: See @claude/milestone-restructure-v2.md  
-**For revised technical roadmap**: See @claude/implementation-roadmap-v2.md
+**For revised technical roadmap**: See `claude/roadmap.md`
 
 ## Key Constraints
 
@@ -293,7 +287,7 @@ This document provides essential information for productive development. For det
 ## Development Memories
 
 ### Core Development Principles
-- **MVP Scope Management**: ALWAYS apply @claude/rules/mvp.md when planning or implementing features. Ask "What breaks if we skip this?" for every task.
+- **MVP Scope Management**: ALWAYS apply `claude/rules/mvp.md` when planning or implementing features. Ask "What breaks if we skip this?" for every task.
 - **MVP Milestone Approach**: Follow the 🛹🛴🚲🏍️🚗 progression. Each stage must deliver complete user value before proceeding to the next.
 - **YAGNI-First Planning**: For every proposed task, answer "What breaks if we skip this?" Vague answers move to backlog.
 - **Token-Constrained Development**: Size work for 5-hour development windows (1-2 development blocks per milestone).
@@ -309,4 +303,4 @@ This document provides essential information for productive development. For det
 - **TypeScript Types**: Prefer `as const` for types with finite known permutations
 - **GitHub Issues**: Use status labels (status:blocked, status:review, status:in-progress, status:ready) and organize related issues into epics with the epic label
 
-**For detailed development guidance**: See @claude/rules/development-memories.md
+**For detailed development guidance**: See `claude/rules/development-memories.md`
